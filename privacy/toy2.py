@@ -52,51 +52,60 @@ def main():
         logger.info("=> no checkpoint found at '{}'".format(ckpt_name))
 
     logger.info("=> begin attacking ...")
+    
+    
     target_model.eval()
 
-    # attack
-    train_x = torch.from_numpy(trans_norm(x)).float().cuda()
-    train_label = torch.from_numpy(y).float().cuda().view(-1, 1)
-    # train_label = Variable(train_label)
-    train_t = torch.from_numpy(t).float().cuda().view(-1, 1)
-    train_t = trans_project_t(train_t)
-    t_adv = Variable(train_t, requires_grad=True)
-    x_adv = merge_t(t_adv, train_x, target_cols)
-    x_adv = Variable(x_adv)
+    if issparse(x): #deal with sparse matrices correctly
+        stack = vstack
+    else:
+        stack = np.stack
 
-    for e in range(att_epochs):
-        tmp1 = torch.inverse(x_adv.t().mm(x_adv))
-        tmp2 = x_adv.t().mm(train_label)
-        c_bar = tmp1.mm(tmp2)
-        h_adv = x_adv.mm(c_bar)
-        cost = torch.mean((train_label - h_adv) ** 2)
-        target_out = target_model(x_adv)
-        # target_out = Variable(target_out)
-        true_cost = torch.mean((train_label - target_out) ** 2)
-        loss = torch.mean(true_cost - cost).abs()
-        # import pdb; pdb.set_trace()
-
-        if t_adv.grad is not None:
-            t_adv.grad.data.fill_(0)
-        t_adv.retain_grad()
-        loss.backward()
-
-        t_adv.grad.sign_()
-        t_adv = t_adv - eps*t_adv.grad
-        t_adv = where(t_adv > t+eps, t+eps, t_adv)
-        t_adv = where(t_adv < t-eps, t-eps, t_adv)
-        t_adv = torch.clamp(t_adv, t_val_min, t_val_max)
-        x_adv = merge_t(t_adv.data, x_adv, target_cols)
-
-        # attack acc
-        num_correct = np.count_nonzero(x_adv == t)
-        num_rows = X.shape[0]
-        attack_acc = num_correct / num_rows
+    assert len(target_cols) > 0
+    one_hot = (len(target_cols) > 1) #whether the target attribute was one-hot encoded (binary otherwise)
+    logger.info("=> target attribute is one-hot? {}".format(one_hot))
+    num_variants = len(target_cols) if one_hot else 2 #number of possible values of the targ
+    guesses = []
+    
+    
+    for i in range(x.shape[0]): #iterate over the rows of X and y
+        row_x = stack([x[i] for _ in range(num_variants)]) #create copies of x[i]
+        if one_hot:
+            row_x[:, target_cols] = np.eye(num_variants) #fill in with all possible values of target (one-hot encoded)
+        else: #fill in with all possible values of target (binary)
+            row_x[0, target_cols] = 0
+            row_x[1, target_cols] = 1
+        row_y = np.repeat(y[i], num_variants)
+        row_y = torch.from_numpy(trans_norm(row_y)).float().cuda()
+        row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
+        label = row_y.unsqueeze(1)
         
-        print("Attack Acc:{:.2f} ".format(attack_acc))
+        # use psudo inverse instead: x^Tx is singular
+        tmp1 = torch.pinverse(row_x.t().mm(row_x)) 
+        tmp2 = row_x.t().mm(row_y.unsqueeze(1))
+        c_bar = tmp1.mm(tmp2)
+        h_adv = row_x.mm(c_bar)
+        cost = ((row_y.unsqueeze(1) - h_adv) ** 2)
+        target_out = target_model(row_x)
+        true_cost = ((row_y.unsqueeze(1) - target_out) ** 2)
+        loss = (true_cost - cost).abs()
+
+        guesses.append(torch.argmin(loss).cpu().numpy())
+        
+        print("person{}:\t true:{}\t estimated:{}".format(i, t[i], torch.argmin(loss).cpu().numpy()))
+
+    # result = np.array(guesses)
+    result = guesses
+    
+    # attack acc
+    num_correct = np.count_nonzero(result == t)
+    num_rows = x.shape[0]
+    attack_acc = num_correct / num_rows
+    import pdb; pdb.set_trace()
+    
+    print("Attack Acc:{:.2f} ".format(attack_acc))
 
     logger.info("=> Attack Finished.")
-    print("Final Attack Acc:{:.2f}".format(attack_acc))
 
 
 if __name__ == "__main__":
