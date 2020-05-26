@@ -3,34 +3,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
-# [-1,1]
-def trans_project(t):
-    min_t, max_t = np.min(t[:]), np.max(t[:])
-    t = (t - min_t) / (max_t - min_t)
-    t = (t - 0.5) * 2
-    return t
-
-# [0,2]
-def inver_project(t):
-    t = t / 2 + 0.5
-    t = t * 2
-    return t
-
-def merge_t(t, x, target_cols):
-    t = inver_project(t)
-    for i in range(x[0]):
-        if t[i] >= 1.5:
-            t[i] = 2
-        elif t[i] >= 0.5 and t[i]<1.5:
-            t[i] = 1
-        else:
-            t[i] = 0
-
-        for j in range(len(target_cols)):
-            x[i, target_cols[j]] = 1 if j == t[i] else 0
-
-        return x
+from work import *
             
 
 class NAT(nn.Module):
@@ -41,7 +14,7 @@ class NAT(nn.Module):
         # self.criterion = nn.MSELoss()
 
     def nat(self, x, y, t, target_cols, eps=0.4, t_val_min=-1, t_val_max=1, iteration):
-        t = trans_project(t)
+        t = trans_project_t(t)
         t_adv = Variable(t.data, requires_grad=True)
         x_adv = merge_t(t_adv.data, x, target_cols)
         for itr in range(iteration):

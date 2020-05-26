@@ -301,3 +301,39 @@ def load_iwpc(data_folder):
     featnames = np.array(dv.get_feature_names())
     return X, y, featnames
 
+############ 
+############
+
+# [-1, 1]
+def trans_project(y):
+    min_y, max_y = np.min(y[:]), np.max(y[:])
+    y = (y - min_y) / (max_y - min_y)
+    y = (y - 0.5) * 2
+    return y
+
+def trans_project_t(t):
+    min_t, max_t = torch.min(t[:]), torch.max(t[:])
+    t = (t - min_t) / (max_t - min_t)
+    t = (t - 0.5) * 2
+    return t
+
+# [0,2]
+def inver_project(t):
+    t = t / 2 + 0.5
+    t = t * 2
+    return t
+
+def merge_t(t, x, target_cols):
+    t = inver_project(t)
+    for i in range(x.shape[0]):
+        if t[i] >= 1.5:
+            t[i] = 2
+        elif t[i] >= 0.5 and t[i]<1.5:
+            t[i] = 1
+        else:
+            t[i] = 0
+
+        for j in range(len(target_cols)):
+            x[i, target_cols[j]] = 1 if j == t[i] else 0
+
+        return x

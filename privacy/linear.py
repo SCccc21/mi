@@ -7,13 +7,14 @@ from math import sqrt
 import numpy as np
 import models, os
 
+
 # [cyp2c9, vkorc1]
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 target_str = "vkorc1"
 data_folder = 'data'
 # [reg, vib]
-model_name = 'def'
+model_name = 'reg'
 random_seed = 2
 # min age
 # age 0
