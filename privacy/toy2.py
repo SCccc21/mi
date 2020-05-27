@@ -75,6 +75,7 @@ def main():
         else: #fill in with all possible values of target (binary)
             row_x[0, target_cols] = 0
             row_x[1, target_cols] = 1
+        
         row_y = np.repeat(y[i], num_variants)
         row_y = torch.from_numpy(trans_norm(row_y)).float().cuda()
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
@@ -86,22 +87,25 @@ def main():
         c_bar = tmp1.mm(tmp2)
         h_adv = row_x.mm(c_bar)
         cost = ((row_y.unsqueeze(1) - h_adv) ** 2)
+        # cost = (row_y.unsqueeze(1) - h_adv).abs()
         target_out = target_model(row_x)
         true_cost = ((row_y.unsqueeze(1) - target_out) ** 2)
+        # true_cost = (row_y.unsqueeze(1) - target_out).abs()
         loss = (true_cost - cost).abs()
-
-        guesses.append(torch.argmin(loss).cpu().numpy())
+        guess = torch.argmin(loss).cpu().numpy()
+        guesses.append(guess)
+        # import pdb; pdb.set_trace()
         
-        print("person{}:\t true:{}\t estimated:{}".format(i, t[i], torch.argmin(loss).cpu().numpy()))
+        print("person{}\t true:{}\t estimated:{}\t {}".format(i, t[i], guess, (guess==t[i])))
 
-    # result = np.array(guesses)
-    result = guesses
+    # result = np.concatenate((t.unsqueeze(1), guesses.unsqueeze(1)), axis=1)
+    # np.savetxt('result.csv', result)
     
     # attack acc
-    num_correct = np.count_nonzero(result == t)
+    num_correct = np.count_nonzero(guesses == t)
     num_rows = x.shape[0]
     attack_acc = num_correct / num_rows
-    import pdb; pdb.set_trace()
+    
     
     print("Attack Acc:{:.2f} ".format(attack_acc))
 
