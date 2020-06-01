@@ -16,7 +16,7 @@ save_path = './checkpoint'
 model_name = 'reg'
 att_epochs = 50
 att_lr = 2e-1
-eps = 1
+eps = 1.4
 t_val_min = 0
 t_val_max = 1 / 8.07
 initial = 0.5 / 8.07 
@@ -102,7 +102,7 @@ def main():
         # attack acc
         pred_t, attack_acc = get_result(x_adv, t, target_cols)
         print("new x_adv:", x_adv[:, target_cols])
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         
         print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
 

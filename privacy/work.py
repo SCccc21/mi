@@ -301,34 +301,6 @@ def load_iwpc(data_folder):
     featnames = np.array(dv.get_feature_names())
     return X, y, featnames
 
-def load_iwpc_m(data_folder):
-    datafile = '{}/iwpc-scaled.csv'.format(data_folder)
-    col_types = {'race': str,
-                 'age': float,
-                 'height': float,
-                 'weight': float,
-                 'amiodarone': int,
-                 'decr': int,
-                 'cyp2c9': str,
-                 'vkorc1': str,
-                 'dose': float}
-    X, y = [], []
-    with open(datafile) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            for col_name in reader.fieldnames:
-                col_type = col_types[col_name]
-                row[col_name] = col_type(row[col_name]) #cast to correct type
-                if col_name == 'dose':
-                    y.append(row[col_name])
-                    del row[col_name]
-            X.append(row)
-    
-    dv = DictVectorizer()
-    X = dv.fit_transform(X).toarray()
-    y = np.array(y)
-    featnames = np.array(dv.get_feature_names())
-    return X, y, featnames
 ############ 
 ############
 
