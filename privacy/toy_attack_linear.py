@@ -14,11 +14,12 @@ save_path = './checkpoint'
 
 # [reg, vib]
 model_name = 'reg'
-att_epochs = 1000
+att_epochs = 50
 att_lr = 2e-1
-eps=0.4
-t_val_min=-1
-t_val_max=1
+eps = 1
+t_val_min = 0
+t_val_max = 1 / 8.07
+initial = 0.5 / 8.07 
 
 def get_logger():
     logger_name = "main-logger"
@@ -55,45 +56,55 @@ def main():
     target_model.eval()
 
     # attack
-    train_x = torch.from_numpy(trans_norm(x)).float().cuda()
+    est_x = torch.from_numpy(trans_norm(x)).float().cuda()
+    init = torch.ones_like(est_x[:,target_cols]).float().cuda()
+    init = init / (2*8.07) 
+    est_x[:, target_cols] = init
     train_label = torch.from_numpy(y).float().cuda().view(-1, 1)
+    # x_adv = Variable(est_x, requires_grad=True)
+    x_adv = est_x
+    x_adv.requires_grad = True
+    # import pdb; pdb.set_trace()
+    '''
     # train_label = Variable(train_label)
     train_t = torch.from_numpy(t).float().cuda().view(-1, 1)
     train_t = trans_project_t(train_t)
     t_adv = Variable(train_t, requires_grad=True)
     x_adv = merge_t(t_adv, train_x, target_cols)
     x_adv = Variable(x_adv)
+    '''
+    Ipp = torch.eye(x_adv.shape[1]).float().cuda()
+    lam = 0.0001
 
     for e in range(att_epochs):
-        tmp1 = torch.inverse(x_adv.t().mm(x_adv))
+        x_adv.requires_grad = True
+        tmp1 = torch.inverse(x_adv.t().mm(x_adv) + lam * Ipp)     # Ridge regression estimator, Hoerl 1970
         tmp2 = x_adv.t().mm(train_label)
         c_bar = tmp1.mm(tmp2)
         h_adv = x_adv.mm(c_bar)
         cost = torch.mean((train_label - h_adv) ** 2)
         target_out = target_model(x_adv)
-        # target_out = Variable(target_out)
         true_cost = torch.mean((train_label - target_out) ** 2)
         loss = torch.mean(true_cost - cost).abs()
-        # import pdb; pdb.set_trace()
 
-        if t_adv.grad is not None:
-            t_adv.grad.data.fill_(0)
-        t_adv.retain_grad()
+        if x_adv.grad is not None:
+            x_adv.grad.data.fill_(0)
+        x_adv.retain_grad()
         loss.backward()
+        # x_adv.grad.sign_()
+        print("initial x_adv:", x_adv[:, target_cols])
+        x_adv[:, target_cols] = x_adv[:, target_cols] - eps*x_adv.grad[:, target_cols]
 
-        t_adv.grad.sign_()
-        t_adv = t_adv - eps*t_adv.grad
-        t_adv = where(t_adv > t+eps, t+eps, t_adv)
-        t_adv = where(t_adv < t-eps, t-eps, t_adv)
-        t_adv = torch.clamp(t_adv, t_val_min, t_val_max)
-        x_adv = merge_t(t_adv.data, x_adv, target_cols)
+        # x_adv[:, target_cols] = where(x_adv[:, target_cols] > est_x[:, target_cols]+eps, est_x[:, target_cols]+eps, x_adv[:, target_cols])
+        # x_adv[:, target_cols] = where(x_adv[:, target_cols] < est_x[:, target_cols]-eps, est_x[:, target_cols]-eps, x_adv[:, target_cols])
+        x_adv[:, target_cols] = torch.clamp(x_adv[:, target_cols], t_val_min, t_val_max)
 
         # attack acc
-        num_correct = np.count_nonzero(x_adv == t)
-        num_rows = X.shape[0]
-        attack_acc = num_correct / num_rows
+        pred_t, attack_acc = get_result(x_adv, t, target_cols)
+        print("new x_adv:", x_adv[:, target_cols])
+        import pdb; pdb.set_trace()
         
-        print("Attack Acc:{:.2f} ".format(attack_acc))
+        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
 
     logger.info("=> Attack Finished.")
     print("Final Attack Acc:{:.2f}".format(attack_acc))

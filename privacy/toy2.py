@@ -81,8 +81,10 @@ def main():
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
         label = row_y.unsqueeze(1)
         
-        # use psudo inverse instead: x^Tx is singular
-        tmp1 = torch.pinverse(row_x.t().mm(row_x)) 
+        Ipp = torch.eye(row_x.shape[1]).float().cuda()
+        lam = 0.0001
+        tmp1 = torch.inverse(row_x.t().mm(row_x) + lam * Ipp)     # Ridge regression estimator, Hoerl 1970
+        # tmp1 = torch.pinverse(row_x.t().mm(row_x))  # use psudo inverse instead: x^Tx is singular
         tmp2 = row_x.t().mm(row_y.unsqueeze(1))
         c_bar = tmp1.mm(tmp2)
         h_adv = row_x.mm(c_bar)
@@ -94,7 +96,7 @@ def main():
         loss = (true_cost - cost).abs()
         guess = torch.argmin(loss).cpu().numpy()
         guesses.append(guess)
-        # import pdb; pdb.set_trace()
+        if i == 4780: import pdb; pdb.set_trace()
         
         print("person{}\t true:{}\t estimated:{}\t {}".format(i, t[i], guess, (guess==t[i])))
 
