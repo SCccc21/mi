@@ -16,7 +16,6 @@ save_path = './checkpoint'
 model_name = 'reg'
 att_epochs = 100
 att_lr = 2e-1
-eps = 1e-2
 t_val_min = 0
 t_val_max = 1 / 8.07
 initial = 0.5 / 8.07 
@@ -53,7 +52,7 @@ def main():
         logger.info("=> no checkpoint found at '{}'".format(ckpt_name))
 
     logger.info("=> begin attacking ...")
-    target_model.eval()
+    # target_model.eval()
 
     # attack
     est_x = torch.from_numpy(trans_norm(x)).float().cuda()
@@ -68,27 +67,28 @@ def main():
     # import pdb; pdb.set_trace()
     
     Ipp = torch.eye(x_adv.shape[1]).float().cuda()
-    lam = 0.0001
+    lam = 0.1
 
     for e in range(att_epochs):
         x_adv.requires_grad = True
-        tmp1 = torch.inverse(x_adv.t().mm(x_adv) + lam * Ipp)     # Ridge regression estimator, Hoerl 1970
-        tmp2 = x_adv.t().mm(train_label)
-        c_bar = tmp1.mm(tmp2)
-        h_adv = x_adv.mm(c_bar)
-        cost = torch.mean((train_label - h_adv) ** 2)
         target_out = target_model(x_adv)
-        true_cost = torch.mean((train_label - target_out) ** 2)
-        loss = torch.mean(true_cost - cost).abs()
-        assert true_cost-cost>=0
-
+        loss1 = torch.mean((train_label - target_out) ** 2)
+        loss1.backward(retain_graph=True)
+        loss2 = 0
+        for param in target_model.parameters():
+            loss2 += param.grad
+            # print(param)
+        
+        loss = loss1 + lam * torch.sum(loss2.abs())
+        # import pdb; pdb.set_trace()
         if x_adv.grad is not None:
             x_adv.grad.data.fill_(0)
         x_adv.retain_grad()
         loss.backward()
+        print("grad:", x_adv.grad[:, target_cols])
         # x_adv.grad.sign_()
         x_adv.detach_()
-        x_adv[:, target_cols] = x_adv[:, target_cols] - eps*x_adv.grad[:, target_cols]
+        x_adv[:, target_cols] = x_adv[:, target_cols] - att_lr*x_adv.grad[:, target_cols]
 
         # x_adv[:, target_cols] = where(x_adv[:, target_cols] > est_x[:, target_cols]+eps, est_x[:, target_cols]+eps, x_adv[:, target_cols])
         # x_adv[:, target_cols] = where(x_adv[:, target_cols] < est_x[:, target_cols]-eps, est_x[:, target_cols]-eps, x_adv[:, target_cols])
@@ -96,9 +96,8 @@ def main():
 
         # attack acc
         pred_t, attack_acc = get_result(x_adv, t, target_cols)
-        # print("new x_adv:", x_adv[:, target_cols])
         print("prediction:", pred_t)
-        # import pdb; pdb.set_trace()
+        
         
         print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
 
