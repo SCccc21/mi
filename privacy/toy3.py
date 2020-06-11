@@ -3,7 +3,7 @@ import numpy as np
 import logging
 import models, os
 from work import *
-from torch.autograd import Variable, grad
+from torch.autograd import Variable
 
 
 # [cyp2c9, vkorc1]
@@ -14,11 +14,11 @@ save_path = './checkpoint'
 
 # [reg, vib]
 model_name = 'reg'
-att_epochs = 100
+att_epochs = 1000
 att_lr = 2e-1
-t_val_min = 0
-t_val_max = 1 / 8.07
-initial = 0.5 / 8.07 
+eps=0.4
+t_val_min=-1
+t_val_max=1
 
 def get_logger():
     logger_name = "main-logger"
@@ -52,57 +52,72 @@ def main():
         logger.info("=> no checkpoint found at '{}'".format(ckpt_name))
 
     logger.info("=> begin attacking ...")
-    # target_model.eval()
-
-    # attack
-    est_x = torch.from_numpy(trans_norm(x)).float().cuda()
-    init = torch.ones_like(est_x[:,target_cols]).float().cuda()
-    init = init / (2*8.07) 
-    est_x[:, target_cols] = init
-    train_label = torch.from_numpy(y).float().cuda().view(-1, 1)
-    # x_adv = Variable(est_x, requires_grad=True)
-    x_adv = est_x
-    print("initial x_adv:", x_adv[:, target_cols])
-    x_adv.requires_grad = True
-    # import pdb; pdb.set_trace()
     
-    Ipp = torch.eye(x_adv.shape[1]).float().cuda()
-    lam = 0.1
+    
+    target_model.eval()
 
-    for e in range(att_epochs):
-        x_adv.requires_grad = True
-        target_out = target_model(x_adv)
-        loss1 = torch.mean((train_label - target_out) ** 2)
-        loss1.backward(retain_graph=True)
-        loss2 = 0
-        for param in target_model.parameters():
-            loss2 += param.grad
-            # print(param)
+    if issparse(x): #deal with sparse matrices correctly
+        stack = vstack
+    else:
+        stack = np.stack
+
+    assert len(target_cols) > 0
+    one_hot = (len(target_cols) > 1) #whether the target attribute was one-hot encoded (binary otherwise)
+    logger.info("=> target attribute is one-hot? {}".format(one_hot))
+    num_variants = len(target_cols) if one_hot else 2 #number of possible values of the targ
+    guesses = []
+    
+    
+    for i in range(x.shape[0]): #iterate over the rows of X and y
+        row_x = stack([x[i] for _ in range(num_variants)]) #create copies of x[i]
+        if one_hot:
+            row_x[:, target_cols] = np.eye(num_variants) #fill in with all possible values of target (one-hot encoded)
+        else: #fill in with all possible values of target (binary)
+            row_x[0, target_cols] = 0
+            row_x[1, target_cols] = 1
         
-        loss = loss1 + lam * torch.sum(loss2.abs())
+        row_y = np.repeat(y[i], num_variants)
+        row_y = torch.from_numpy(row_y).float().cuda()
+        row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
+        label = row_y.unsqueeze(1)
+        
+        Ipp = torch.eye(row_x.shape[1]).float().cuda()
+        lam = 0
+
+        row_x.requires_grad = True
+        target_out = target_model(row_x).view(-1)
+        losses = []
+        import pdb; pdb.set_trace()
+
+        for idx in range(3):
+            loss1 = (row_y[idx] - target_out[idx]).abs()
+            loss1.backward(retain_graph=True)
+            loss2 = 0
+            for param in target_model.parameters():
+                loss2 += param.grad
+                # print(param)
+            loss = loss1 + lam * torch.sum(loss2.abs())
+            losses.append(loss1)
+
+        losses = np.array(losses)
+        guess = np.argmin(losses)
+        guesses.append(guess)
         # import pdb; pdb.set_trace()
-        if x_adv.grad is not None:
-            x_adv.grad.data.fill_(0)
-        x_adv.retain_grad()
-        loss.backward()
-        print("grad:", x_adv.grad[:, target_cols])
-        # x_adv.grad.sign_()
-        x_adv.detach_()
-        x_adv[:, target_cols] = x_adv[:, target_cols] - att_lr*x_adv.grad[:, target_cols]
-
-        # x_adv[:, target_cols] = where(x_adv[:, target_cols] > est_x[:, target_cols]+eps, est_x[:, target_cols]+eps, x_adv[:, target_cols])
-        # x_adv[:, target_cols] = where(x_adv[:, target_cols] < est_x[:, target_cols]-eps, est_x[:, target_cols]-eps, x_adv[:, target_cols])
-        x_adv[:, target_cols] = torch.clamp(x_adv[:, target_cols], t_val_min, t_val_max)
-
-        # attack acc
-        pred_t, attack_acc = get_result(x_adv, t, target_cols)
-        print("prediction:", pred_t)
         
-        
-        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
+        print("person{}\t true:{}\t estimated:{}\t {}".format(i, t[i], guess, (guess==t[i])))
+
+    # result = np.concatenate((t.unsqueeze(1), guesses.unsqueeze(1)), axis=1)
+    # np.savetxt('result.csv', result)
+    
+    # attack acc
+    num_correct = np.count_nonzero(guesses == t)
+    num_rows = x.shape[0]
+    attack_acc = num_correct / num_rows
+    
+    
+    print("Attack Acc:{:.2f} ".format(attack_acc * 100))
 
     logger.info("=> Attack Finished.")
-    print("Final Attack Acc:{:.2f}".format(attack_acc))
 
 
 if __name__ == "__main__":

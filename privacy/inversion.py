@@ -100,6 +100,7 @@ def mlp_invert(model, X, y, target_cols, model_name):
         
         if model_name == "reg" or model_name == "def" or model_name == "dp":
             errors = row_y - model(row_X).view(-1).cpu().detach().numpy()
+            # import pdb; pdb.set_trace()
         elif model_name == "vib":
             errors = row_y - model(row_X)[0].view(-1).cpu().detach().numpy()
         elif model_name == "sen":
@@ -110,4 +111,61 @@ def mlp_invert(model, X, y, target_cols, model_name):
         
     return np.array(guesses)
 
+def toy3_invert(model, x, y, t, target_cols):
+    model.eval()
+    
+    if issparse(x): #deal with sparse matrices correctly
+        stack = vstack
+    else:
+        stack = np.stack
 
+    assert len(target_cols) > 0
+    one_hot = (len(target_cols) > 1) #whether the target attribute was one-hot encoded (binary otherwise)
+    num_variants = len(target_cols) if one_hot else 2 #number of possible values of the targ
+    guesses = []
+    
+    
+    for i in range(x.shape[0]): #iterate over the rows of X and y
+        row_x = stack([x[i] for _ in range(num_variants)]) #create copies of x[i]
+        if one_hot:
+            row_x[:, target_cols] = np.eye(num_variants) #fill in with all possible values of target (one-hot encoded)
+        else: #fill in with all possible values of target (binary)
+            row_x[0, target_cols] = 0
+            row_x[1, target_cols] = 1
+        
+        row_y = np.repeat(y[i], num_variants)
+        row_y = torch.from_numpy(row_y).float().cuda()
+        row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
+        label = row_y.unsqueeze(1)
+        
+        Ipp = torch.eye(row_x.shape[1]).float().cuda()
+        lam = 0.1
+
+        row_x.requires_grad = True
+        target_out = model(row_x).view(-1)
+        losses = []
+        for idx in range(3):
+            loss1 = (row_y[idx] - target_out[idx]).abs()
+            loss1.backward(retain_graph=True)
+            loss2 = 0
+            for param in model.parameters():
+                loss2 += param.grad
+                # print(param)
+            loss = loss1 + lam * torch.sum(loss2.abs())
+            losses.append(loss)
+        # import pdb; pdb.set_trace()
+        losses = np.array(losses)
+        guess = np.argmin(losses)
+        guesses.append(guess)
+        
+        print("person{}\t true:{}\t estimated:{}\t {}".format(i, t[i], guess, (guess==t[i])))
+
+    # result = np.concatenate((t.unsqueeze(1), guesses.unsqueeze(1)), axis=1)
+    # np.savetxt('result.csv', result)
+    
+    # attack acc
+    num_correct = np.count_nonzero(guesses == t)
+    num_rows = x.shape[0]
+    attack_acc = num_correct / num_rows
+
+    return attack_acc

@@ -77,7 +77,7 @@ def main():
             row_x[1, target_cols] = 1
         
         row_y = np.repeat(y[i], num_variants)
-        row_y = torch.from_numpy(trans_norm(row_y)).float().cuda()
+        row_y = torch.from_numpy(row_y).float().cuda()
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
         label = row_y.unsqueeze(1)
         

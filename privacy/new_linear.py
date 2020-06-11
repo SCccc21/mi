@@ -9,6 +9,7 @@ import models, os
 import logging
 import torch
 from work import *
+from inversion import toy3_invert
 
 # [cyp2c9, vkorc1]
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -159,13 +160,13 @@ def main():
         exit()
     
     
-
     if target_str in ["height", "weight", "age"]:
         mae = inver_continuous(model, model_name, train_x, train_y, train_t, target_cols, min_val, max_val)
         print("Model name:{}\tTarget Str:{}\tTrain Error:{:.4f}\tTest Error:{:.4f}\tAttack MAE:{:.2f}".format(
             model_name, target_str, train_error, test_error, mae))
     else:
-        attack_acc = inver(model, model_name, train_x, train_y, train_t, target_cols)
+        # attack_acc = inver(model, model_name, train_x, train_y, train_t, target_cols)
+        attack_acc = toy3_invert(model, train_x, train_y, train_t, target_cols)
         print("Model name:{}\tTarget Str:{}\tTrain Error:{:.4f}\tTest Error:{:.4f}\tAttack Acc:{:.2f}".format(
             model_name, target_str, train_error, test_error, attack_acc * 100))
 
