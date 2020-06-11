@@ -61,11 +61,12 @@ def main():
     x_adv = torch.from_numpy(trans_norm(train_x)).float().cuda()
     train_label = torch.from_numpy(train_y).float().cuda().view(-1, 1)
     init = torch.ones_like(x_adv[:,target_cols]).float().cuda()
-    init = init / (8.07) 
+    init = init / (2 * 8.07) 
     x_adv[:, target_cols] = init
     # print("initial x_adv:", x_adv[:, target_cols])
     x_adv.requires_grad = True
     
+
     Ipp = torch.eye(x_adv.shape[1]).float().cuda()
     lam = 0
 
@@ -96,7 +97,7 @@ def main():
         # attack acc
         pred_t, attack_acc = get_result(x_adv, train_t, target_cols)
         print("prediction:", pred_t)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         
         print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc * 100))
 

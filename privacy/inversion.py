@@ -100,7 +100,7 @@ def mlp_invert(model, X, y, target_cols, model_name):
         
         if model_name == "reg" or model_name == "def" or model_name == "dp":
             errors = row_y - model(row_X).view(-1).cpu().detach().numpy()
-            # import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
         elif model_name == "vib":
             errors = row_y - model(row_X)[0].view(-1).cpu().detach().numpy()
         elif model_name == "sen":

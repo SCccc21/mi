@@ -69,7 +69,7 @@ def main():
     # import pdb; pdb.set_trace()
     
     Ipp = torch.eye(x_adv.shape[1]).float().cuda()
-    lam = 0.0001
+    lam = 0.01
 
     for e in range(att_epochs):
         x_adv.requires_grad = True
@@ -99,12 +99,12 @@ def main():
         pred_t, attack_acc = get_result(x_adv, train_t, target_cols)
         # print("new x_adv:", x_adv[:, target_cols])
         print("prediction:", pred_t)
-        # import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         
-        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
+        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc * 100))
 
     logger.info("=> Attack Finished.")
-    print("Final Attack Acc:{:.2f}".format(attack_acc))
+    print("Final Attack Acc:{:.2f}".format(attack_acc  * 100))
 
 
 if __name__ == "__main__":

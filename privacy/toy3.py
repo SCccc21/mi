@@ -81,12 +81,12 @@ def main():
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
         
         Ipp = torch.eye(row_x.shape[1]).float().cuda()
-        lam = 0
+        lam = 0.08
 
         row_x.requires_grad = True
         target_out = target_model(row_x).view(-1)
         losses = []
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         for idx in range(3):
             loss1 = (row_y[idx] - target_out[idx]).abs()
@@ -94,9 +94,9 @@ def main():
             loss2 = 0
             for param in target_model.parameters():
                 loss2 += param.grad
-                # print(param)
+                
             loss = loss1 + lam * torch.sum(loss2.abs())
-            losses.append(loss1)
+            losses.append(loss)
 
         losses = np.array(losses)
         guess = np.argmin(losses)
