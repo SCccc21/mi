@@ -79,7 +79,6 @@ def main():
         row_y = np.repeat(y[i], num_variants)
         row_y = torch.from_numpy(row_y).float().cuda()
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
-        label = row_y.unsqueeze(1)
         
         Ipp = torch.eye(row_x.shape[1]).float().cuda()
         lam = 0.0001
@@ -96,7 +95,7 @@ def main():
         loss = (true_cost - cost).abs()
         guess = torch.argmin(loss).cpu().numpy()
         guesses.append(guess)
-        if i == 4780: import pdb; pdb.set_trace()
+        # if i == 4780: import pdb; pdb.set_trace()
         
         print("person{}\t true:{}\t estimated:{}\t {}".format(i, t[i], guess, (guess==t[i])))
 
@@ -109,7 +108,7 @@ def main():
     attack_acc = num_correct / num_rows
     
     
-    print("Attack Acc:{:.2f} ".format(attack_acc))
+    print("Attack Acc:{:.2f} ".format(attack_acc * 100))
 
     logger.info("=> Attack Finished.")
 

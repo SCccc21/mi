@@ -79,7 +79,6 @@ def main():
         row_y = np.repeat(y[i], num_variants)
         row_y = torch.from_numpy(row_y).float().cuda()
         row_x = torch.from_numpy(trans_norm(row_x)).float().cuda()
-        label = row_y.unsqueeze(1)
         
         Ipp = torch.eye(row_x.shape[1]).float().cuda()
         lam = 0

@@ -43,6 +43,9 @@ def main():
 
     t, target_cols = extract_target(x, target_str, featnames)
 
+    train_x, test_x, train_y, test_y, train_t, test_t = train_test_split(x, y, t,
+                                                        random_state=random_seed, test_size=0.25)
+
     target_model = models.MLP(input_dim=x.shape[1]).cuda()
     ckpt_name = './checkpoint/model_latest.pth'
     if os.path.isfile(ckpt_name):
@@ -56,13 +59,11 @@ def main():
     target_model.eval()
 
     # attack
-    est_x = torch.from_numpy(trans_norm(x)).float().cuda()
-    init = torch.ones_like(est_x[:,target_cols]).float().cuda()
-    init = init / (2*8.07) 
-    est_x[:, target_cols] = init
-    train_label = torch.from_numpy(y).float().cuda().view(-1, 1)
-    # x_adv = Variable(est_x, requires_grad=True)
-    x_adv = est_x
+    x_adv = torch.from_numpy(trans_norm(train_x)).float().cuda()
+    train_label = torch.from_numpy(train_y).float().cuda().view(-1, 1)
+    init = torch.ones_like(x_adv[:,target_cols]).float().cuda()
+    init = init / (8.07) 
+    x_adv[:, target_cols] = init
     print("initial x_adv:", x_adv[:, target_cols])
     x_adv.requires_grad = True
     # import pdb; pdb.set_trace()
@@ -95,7 +96,7 @@ def main():
         x_adv[:, target_cols] = torch.clamp(x_adv[:, target_cols], t_val_min, t_val_max)
 
         # attack acc
-        pred_t, attack_acc = get_result(x_adv, t, target_cols)
+        pred_t, attack_acc = get_result(x_adv, train_t, target_cols)
         # print("new x_adv:", x_adv[:, target_cols])
         print("prediction:", pred_t)
         # import pdb; pdb.set_trace()

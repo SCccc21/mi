@@ -61,11 +61,10 @@ def main():
     x_adv = torch.from_numpy(trans_norm(train_x)).float().cuda()
     train_label = torch.from_numpy(train_y).float().cuda().view(-1, 1)
     init = torch.ones_like(x_adv[:,target_cols]).float().cuda()
-    # init = init / (2*8.07) 
+    init = init / (8.07) 
     x_adv[:, target_cols] = init
     # print("initial x_adv:", x_adv[:, target_cols])
     x_adv.requires_grad = True
-    import pdb; pdb.set_trace()
     
     Ipp = torch.eye(x_adv.shape[1]).float().cuda()
     lam = 0
@@ -90,20 +89,19 @@ def main():
         
         x_adv.detach_()
         x_adv[:, target_cols] = x_adv[:, target_cols] - att_lr*x_adv.grad[:, target_cols]
-
         # x_adv[:, target_cols] = where(x_adv[:, target_cols] > est_x[:, target_cols]+eps, est_x[:, target_cols]+eps, x_adv[:, target_cols])
         # x_adv[:, target_cols] = where(x_adv[:, target_cols] < est_x[:, target_cols]-eps, est_x[:, target_cols]-eps, x_adv[:, target_cols])
         x_adv[:, target_cols] = torch.clamp(x_adv[:, target_cols], t_val_min, t_val_max)
 
         # attack acc
-        pred_t, attack_acc = get_result(x_adv, t, target_cols)
+        pred_t, attack_acc = get_result(x_adv, train_t, target_cols)
         print("prediction:", pred_t)
         import pdb; pdb.set_trace()
         
-        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc))
+        print("Epoch:{}\t loss:{}\t Attack Acc:{:.2f} ".format(e, loss, attack_acc * 100))
 
     logger.info("=> Attack Finished.")
-    print("Final Attack Acc:{:.2f}".format(attack_acc))
+    print("Final Attack Acc:{:.2f}".format(attack_acc * 100))
 
 
 if __name__ == "__main__":
