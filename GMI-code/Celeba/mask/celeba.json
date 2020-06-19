@@ -1,0 +1,8 @@
+{
+    "dataset":{
+        "train_file_path": "/home/sichen/data/splits_11/public",
+        "test_file_path": "/"
+    }
+
+
+}

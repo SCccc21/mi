@@ -92,7 +92,7 @@ if __name__ == "__main__":
             r_logit = DG(imgs)
             f_logit = DG(f_imgs)
             
-            wd = r_logit.mean() - f_logit.mean()  # Wasserstein-1 Distance      GAN loss
+            wd = r_logit.mean() - f_logit.mean()  # Wasserstein-1 Distance
             gp = gradient_penalty(imgs.data, f_imgs.data)
             dg_loss = - wd + gp * 10.0
             

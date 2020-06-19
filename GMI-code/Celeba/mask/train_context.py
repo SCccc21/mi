@@ -76,6 +76,8 @@ if __name__ == "__main__":
     args = load_params(json_file=file)
     file_path = args['dataset']['train_file_path']
     test_file_path = args['dataset']['test_file_path']
+    
+    
     '''
     pbar = tqdm(total=len(img_list), desc='computing mean pixel value for training dataset...')
     for img_name in img_list:
@@ -132,9 +134,9 @@ if __name__ == "__main__":
             
             # train dl
             
-            freeze(DG)
-            freeze(G)
-            unfreeze(DL)
+            freeze(DG)  # discriminator global
+            freeze(G)   # generator?
+            unfreeze(DL)    # discriminator local
             
             mask = get_center_mask(img_size, bs)
             x_mask = x - x * mask + mpv * mask
@@ -198,7 +200,7 @@ if __name__ == "__main__":
             __, logit_dg = DG(output)
             # calculate g_loss
             gan_loss = (- logit_dl.mean() - logit_dg.mean()) / 2
-            re_loss = completion_network_loss(x, output, mask)
+            re_loss = completion_network_loss(x, output, mask)   # prior loss?
             loss = gan_loss * 20 + re_loss 
             gan.update(gan_loss.detach().cpu().numpy(), bs)
             re.update(re_loss.detach().cpu().numpy(), bs)
