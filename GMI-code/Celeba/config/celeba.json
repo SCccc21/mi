@@ -1,0 +1,15 @@
+{
+    "dataset":{
+        "train_file_path": "/home/sichen/data/splits_11/public",
+        "test_file_path": "/home/sichen/data/splits_11/private/",
+        "model_name": "celeba"
+    },
+
+    "celeba":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 110,
+        "n_critic": 5
+    }
+}

@@ -119,7 +119,7 @@ if __name__ == "__main__":
     os.makedirs(result_model_dir, exist_ok=True)
 
     file_path = args['dataset']['train_file_path']
-    # test_file_path = args['dataset']['test_file_path']
+    test_file_path = args['dataset']['test_file_path']
     mpv = np.zeros(shape=(3,))
     '''
     pbar = tqdm(total=len(img_list), desc='computing mean pixel value for training dataset...')
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     mpv = np.array([0.5061, 0.4254, 0.3828])
     mpv = torch.tensor(mpv.astype(np.float32).reshape(1, 3, 1, 1)).cuda()
     data_set, data_loader = init_dataloader(args, file_path, batch_size)
-    # test_set, test_loader = init_dataloader(args, test_file_path, batch_size)
+    test_set, test_loader = init_dataloader(args, test_file_path, batch_size)
 
     Net = InversionNet().cuda()
     Net = torch.nn.DataParallel(Net)

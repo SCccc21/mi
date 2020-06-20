@@ -55,6 +55,8 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan"):
 
     if args['dataset']['name'] == "celeba":
         data_set = dataloader.ImageFolder(args, file_path, mode)
+        # for classify
+        
     else:
         data_set = dataloader.GrayFolder(args, file_path, mode)
         
