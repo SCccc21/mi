@@ -161,7 +161,7 @@ if __name__ == "__main__":
         V = FaceNet64(1000)
     
     V = torch.nn.DataParallel(V).cuda()
-    path_V = "attack_model/" + model_name + ".tar"
+    path_V = "target_model/" + model_name + ".tar"
     ckp_V = torch.load(path_V)
     load_my_state_dict(V, ckp_V['state_dict'])
 

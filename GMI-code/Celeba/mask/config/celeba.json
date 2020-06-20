@@ -1,7 +1,39 @@
 {
     "dataset":{
-        "train_file_path": "/home/sichen/data/splits_11/public",
-        "test_file_path": "/"
+        "train_file_path": "/home/sichen/data/splits_11/identity_public_train.txt",
+        "test_file_path": "/home/sichen/data/splits_11/identity_public_test.txt",
+        "model_name": "train_inv - fist stage",
+        "name": "celeba",
+        "img_path": "/home/sichen/data/img_align_celeba",
+        "n_classes":1000
+    },
+
+    "train_gan - fist stage":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 110,
+        "n_critic": 5
+    },
+
+    "train_inv - fist stage":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 110,
+        "n_critic": 5
+    },
+
+    "FaceNet":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "epochs": 400
+    },
+
+    "vgg":{
+        "lr": 0.01,
+        "batch_size": 64,
+        "epochs": 400
     }
 
 

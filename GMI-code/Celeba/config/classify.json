@@ -1,13 +1,32 @@
 {
     "dataset":{
-        "train_file_path": "/home/sichen/data/splits_11/private/train",
-        "test_file_path": "/home/sichen/data/splits_11/private/test",
-        "model_name": "celeba"
+        "train_file_path": "/home/sichen/data/splits_11/identity_private_train.txt",
+        "test_file_path": "/home/sichen/data/splits_11/identity_private_test.txt",
+        "model_name": "vgg",
+        "name": "celeba",
+        "img_path": "/home/sichen/data/img_align_celeba",
+        "n_classes":1000
     },
 
-    "celeba":{
+    "train_gan - fist stage":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 110,
+        "n_critic": 5
+    },
+
+    "FaceNet":{
+        "lr": 0.004,
+        "batch_size": 64,
+        "epochs": 400
+    },
+
+    "vgg":{
         "lr": 0.01,
         "batch_size": 64,
-        "epochs": 500
+        "epochs": 400
     }
+
+
 }
