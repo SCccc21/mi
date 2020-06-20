@@ -8,13 +8,15 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import matplotlib.pyplot as plt
 import numpy as np
+import logging
 
 import random
 import time
 from classify import *
 from utils import *
 import classify
-from tensorboardX import SummaryWriter
+from utils import *
+# from tensorboardX import SummaryWriter
 
 
 #logger
@@ -75,20 +77,20 @@ if __name__ == "__main__":
 
     global args, logger, writer
     logger = get_logger()
-    writer = SummaryWriter('./model_classifier')
+    # writer = SummaryWriter('./model_classifier')
     file = "./config/classify" + ".json"
     args = load_params(json_file=file)
     logger.info(args)
     logger.info("=> creating model ...")
 
-    model_name = "vgg"
-    save_model_dir = "target_model/" + model_name
+    model_name = "VGG16"
+    save_model_dir = "./target_model/" + model_name
     os.makedirs(save_model_dir, exist_ok=True)
    
     best_loss_all = 1e9
 
     train_path = args['dataset']['train_file_path']
-    val_path = = args['dataset']['test_file_path']
+    val_path = args['dataset']['test_file_path']
     model_name = args['dataset']['model_name']
     lr = args[model_name]['lr']
     batch_size = args[model_name]['batch_size']
@@ -103,11 +105,11 @@ if __name__ == "__main__":
 
 
     model = torch.nn.DataParallel(model).cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss().cuda()
 
-    train_set, train_loader = init_dataloader(args, train_path, batch_size， mode="classify")
-    val_set, val_loader = init_dataloader(args, test_path, batch_size， mode="classify")
+    train_set, train_loader = init_dataloader(args, train_path, batch_size, mode="classify")
+    val_set, val_loader = init_dataloader(args, val_path, batch_size, mode="classify")
     
     print("---------------------Training [%s]------------------------------" % model_name)
 
@@ -149,17 +151,17 @@ if __name__ == "__main__":
                 int(t_h), int(t_m), int(t_s))
 
             if (i + 1) % 10 == 0:
-            logger.info('Epoch: [{}/{}][{}/{}] '
-                        'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
-                        'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
-                        'Remain {remain_time}.'.format(
-                            e,
-                            epochs,
-                            i + 1,
-                            len(train_loader),
-                            batch_time=batch_time,
-                            data_time=data_time,
-                            remain_time=remain_time))
+                logger.info('Epoch: [{}/{}][{}/{}] '
+                            'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
+                            'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
+                            'Remain {remain_time}.'.format(
+                                e,
+                                epochs,
+                                i + 1,
+                                len(train_loader),
+                                batch_time=batch_time,
+                                data_time=data_time,
+                                remain_time=remain_time))
             logger.info('Train Loss {loss_meter.val:.4f} '.format(loss_meter=loss_meter))
 
         # writer.add_scalar('loss_train', loss_train, e)

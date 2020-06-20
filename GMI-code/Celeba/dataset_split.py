@@ -71,6 +71,15 @@ def public_private_splits(data_path):
         img_name, iden = line.strip().split(' ')
     
         if 0 < int(iden) < 1001:
+            if cnt_private < TRAIN_STOP:
+                check_link(images_path, img_name, private_train_dir)
+                f_private_train.write(line)
+            else:
+                check_link(images_path, img_name, private_test_dir)
+                f_private_test.write(line)
+            cnt_private += 1
+
+        if 1000 < int(iden) < 2001:
             if cnt_public < TRAIN_STOP:
                 check_link(images_path, img_name, public_train_dir)
                 f_public_train.write(line)
@@ -81,14 +90,6 @@ def public_private_splits(data_path):
             # check_link(images_path, img_name, public_dir)
             # f_public.write(line)
             
-        if 1000 < int(iden) < 2001:
-            if cnt_private < TRAIN_STOP:
-                check_link(images_path, img_name, private_train_dir)
-                f_private_train.write(line)
-            else:
-                check_link(images_path, img_name, private_test_dir)
-                f_private_test.write(line)
-            cnt_private += 1
 
     # print('number of images in public dir is:'.format())
     
