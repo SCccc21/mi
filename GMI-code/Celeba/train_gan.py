@@ -79,6 +79,7 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         start = time.time()
         for i, imgs in enumerate(dataloader):
+            # import pdb; pdb.set_trace()
             step += 1
             imgs = imgs.cuda()
             bs = imgs.size(0)

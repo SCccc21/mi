@@ -11,6 +11,7 @@ import torchvision.utils as tvls
 from torchvision import transforms
 from datetime import datetime
 from scipy.signal import convolve2d
+import dataloader
 
 device = "cuda"
 
@@ -56,7 +57,7 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan"):
     if args['dataset']['name'] == "celeba":
         data_set = dataloader.ImageFolder(args, file_path, mode)
         # for classify
-        data_set.get_list()
+        # data_set.get_list()
 
     else:
         data_set = dataloader.GrayFolder(args, file_path, mode)

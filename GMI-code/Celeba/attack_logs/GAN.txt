@@ -1,0 +1,29 @@
+---------------------Training [train_gan - fist stage]------------------------------
+-----------------------------------------------------------------
+Running time: 2020-06-20_07-59-38
+train_file_path: /home/sichen/data/splits_11/identity_public_train.txt
+test_file_path: /home/sichen/data/splits_11/identity_public_test.txt
+model_name: train_gan - fist stage
+name: celeba
+img_path: /home/sichen/data/img_align_celeba
+n_classes: 1000
+lr: 0.004
+batch_size: 64
+z_dim: 100
+epochs: 110
+n_critic: 5
+-----------------------------------------------------------------
+Load 18993 images
+Initializing data loader took 13s
+Epoch:0 	 Time:110.72
+Epoch:1 	 Time:108.94
+Epoch:2 	 Time:109.03
+Epoch:3 	 Time:108.93
+Epoch:4 	 Time:109.03
+Epoch:5 	 Time:108.87
+Epoch:6 	 Time:108.89
+Epoch:7 	 Time:108.98
+Epoch:8 	 Time:108.83
+Epoch:9 	 Time:109.01
+Epoch:10 	 Time:108.84
+Epoch:11 	 Time:108.87
