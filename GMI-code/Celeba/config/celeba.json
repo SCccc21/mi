@@ -1,7 +1,7 @@
 {
     "dataset":{
-        "train_file_path": "/home/sichen/data/splits_11/public",
-        "test_file_path": "/home/sichen/data/splits_11/private/",
+        "train_file_path": "/home/sichen/data/splits_11/identity_public_train.txt",
+        "test_file_path": "/home/sichen/data/splits_11/identity_public_test.txt",
         "model_name": "celeba"
     },
 
