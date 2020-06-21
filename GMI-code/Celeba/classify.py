@@ -36,9 +36,9 @@ class VGG16(nn.Module):
         feature = feature.view(feature.size(0), -1)
         feature = self.bn(feature)
         res = self.fc_layer(feature)
-        out = F.softmax(res, dim=1)
+        # out = F.softmax(res, dim=1)
 
-        return out
+        return res
 
 class CrossEntropyLoss(_Loss):
     def forward(self, out, gt, mode="reg"):

@@ -77,13 +77,18 @@ class ImageFolder(data.Dataset):
 
     def __getitem__(self, index):
         processer = self.get_processor()
+        # print('before', index)
         img = processer(self.image_list[index])
+        # print('after', index)
         if self.mode == "gan":
             return img
         label = self.label_list[index]
         one_hot = np.zeros(self.n_classes)
-        one_hot[label] = 1
-        return img, one_hot, label
+        one_hot[label-1] = 1
+        # print(label)
+        # print('--------')
+
+        return img, one_hot, label-1
 
     def __len__(self):
         return self.num_img
@@ -167,8 +172,3 @@ def load_mnist():
 
 if __name__ == "__main__":
     print("ok")
-
-
-
-    
-

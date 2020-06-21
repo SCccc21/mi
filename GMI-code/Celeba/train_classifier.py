@@ -6,18 +6,35 @@ from torch.optim.lr_scheduler import _LRScheduler
 import torch.utils.data as data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+import torchvision.models as tvmodels
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
+import time
+import shutil
 
 import random
-import time
 from classify import *
-from utils import *
-import classify
 from utils import *
 # from tensorboardX import SummaryWriter
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
 
 #logger
 def get_logger():
@@ -44,10 +61,10 @@ def validate(val_loader, model, criterion):
             loss_meter = AverageMeter()
             data_time.update(time.time() - end)
             imgs =  imgs.cuda()
-            one_hot = one_hot.cuda()
+            label = label.cuda()
 
-            output = model.predict(imgs)
-            loss_val = criterion(output, one_hot)
+            out = model.predict(imgs)
+            loss_val = criterion(out, label)
 
             loss_meter.update(loss_val, imgs.size(0))
 
@@ -104,7 +121,7 @@ if __name__ == "__main__":
         model = FaceNet64(1000)
 
 
-    model = torch.nn.DataParallel(model).cuda()
+    model = model.cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss().cuda()
 
@@ -114,29 +131,36 @@ if __name__ == "__main__":
     print("---------------------Training [%s]------------------------------" % model_name)
 
     for e in range(epochs):
-
         batch_time = AverageMeter()
         data_time = AverageMeter()
         loss_meter = None
         end = time.time()
-
+        
         # training  
         for i, (imgs, one_hot, label) in enumerate(train_loader):
+            
             data_time.update(time.time() - end)
             current_iter = (e - 1) * len(train_loader) + i + 1
             max_iter = epochs * len(train_loader)
 
             x = imgs.cuda()
-            one_hot = one_hot.cuda()
+            # one_hot = one_hot.long().cuda()
+            label = label.cuda()
             img_size = x.size(2)
             bs = x.size(0)
 
-            res = model.predict(imgs)
-            loss = criterion(res, one_hot)
-            
+            out = model.predict(x)
+            loss = criterion(out, label)
+            # import pdb; pdb.set_trace()
             optimizer.zero_grad()
-            loss.bacward()
+            a = list(model.parameters())[0].clone()
+            loss.backward()
             optimizer.step()
+            b = list(model.parameters())[0].clone()
+            # print(torch.equal(a.data, b.data))
+            # print(list(model.parameters())[0].grad)
+            # print('--------')
+            
 
             loss_meter = AverageMeter()
             loss_meter.update(loss.detach().cpu().numpy(), bs)
@@ -162,7 +186,7 @@ if __name__ == "__main__":
                                 batch_time=batch_time,
                                 data_time=data_time,
                                 remain_time=remain_time))
-            logger.info('Train Loss {loss_meter.val:.4f} '.format(loss_meter=loss_meter))
+                logger.info('Train Loss {loss_meter.val:.4f} '.format(loss_meter=loss_meter))
 
         # writer.add_scalar('loss_train', loss_train, e)
         is_best = False
@@ -185,7 +209,7 @@ if __name__ == "__main__":
             shutil.copyfile(filename,
                             os.path.join(save_model_dir, 'model_best.pth'))
 
-        if e % 50 == 0:
+        if e % 20 == 0:
             shutil.copyfile(
                 filename,
                 save_model_dir + '/train_epoch_' + str(e) + '.pth')

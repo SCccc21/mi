@@ -63,7 +63,7 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan"):
     data_loader = torch.utils.data.DataLoader(data_set,
                                 batch_size=batch_size,
                                 shuffle=shuffle_flag,
-                                num_workers=4,
+                                num_workers=0,
                                 pin_memory=True)
 
     interval = time.time() - tf
@@ -279,20 +279,3 @@ def calc_knn(feat, iden, path="feature"):
     return knn_dist / bs
 
 
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count

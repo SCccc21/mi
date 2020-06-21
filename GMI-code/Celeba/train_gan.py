@@ -79,7 +79,7 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         start = time.time()
         for i, imgs in enumerate(dataloader):
-            # import pdb; pdb.set_trace()
+            
             step += 1
             imgs = imgs.cuda()
             bs = imgs.size(0)
@@ -118,6 +118,7 @@ if __name__ == "__main__":
 
         end = time.time()
         interval = end - start
+        import pdb; pdb.set_trace()
         print("Epoch:%d \t Time:%.2f" % (epoch, interval))
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
