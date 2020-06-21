@@ -8,6 +8,7 @@ num_classes = 1000
 log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
 
+# generator, discriminator, target model,
 def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
@@ -39,6 +40,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			fake = G(z)
 			label = D(fake)
 			out = T(fake)[-1]
+			# import pdb; pdb.set_trace()
 			
 			if z.grad is not None:
 				z.grad.data.zero_()

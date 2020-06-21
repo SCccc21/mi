@@ -17,15 +17,15 @@
     },
 
     "FaceNet":{
-        "lr": 0.004,
+        "lr": 1e-2,
         "batch_size": 64,
-        "epochs": 300
+        "epochs": 150
     },
 
     "VGG16":{
         "lr": 1e-2,
         "batch_size": 64,
-        "epochs": 300
+        "epochs": 100
     }
 
 

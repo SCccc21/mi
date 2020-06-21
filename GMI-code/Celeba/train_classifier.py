@@ -100,7 +100,7 @@ if __name__ == "__main__":
     logger.info(args)
     logger.info("=> creating model ...")
 
-    model_name = "VGG16"
+    model_name = "FaceNet"
     save_model_dir = "./target_model/" + model_name
     os.makedirs(save_model_dir, exist_ok=True)
    
@@ -117,8 +117,8 @@ if __name__ == "__main__":
         model = VGG16(1000)
     elif model_name.startswith('IR152'):
         model = IR152(1000)
-    elif model_name == "FaceNet64":
-        model = FaceNet64(1000)
+    elif model_name == "FaceNet":
+        model = FaceNet(1000)
 
 
     model = model.cuda()

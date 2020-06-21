@@ -1,10 +1,10 @@
 {
     "dataset":{
-        "train_file_path": "/home/sichen/data/splits_11/identity_public_train.txt",
-        "test_file_path": "/home/sichen/data/splits_11/identity_public_test.txt",
-        "model_name": "train_gan - first stage",
+        "train_file_path": "/home/sichen/data/splits_11/identity_private_train.txt",
+        "test_file_path": "/home/sichen/data/splits_11/identity_private_test.txt",
         "name": "celeba",
         "img_path": "/home/sichen/data/img_align_celeba",
+        "model_name": "VGG16",
         "n_classes":1000
     },
 
