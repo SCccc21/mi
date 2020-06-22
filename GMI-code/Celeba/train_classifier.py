@@ -63,7 +63,11 @@ def validate(val_loader, model, criterion):
             imgs =  imgs.cuda()
             label = label.cuda()
 
-            out = model.predict(imgs)
+            if model_name == "FaceNet":
+                out = model.module.predict(imgs)
+            else:
+                out = model.predict(imgs)
+
             loss_val = criterion(out, label)
 
             loss_meter.update(loss_val, imgs.size(0))
@@ -99,10 +103,7 @@ if __name__ == "__main__":
     args = load_params(json_file=file)
     logger.info(args)
     logger.info("=> creating model ...")
-
-    model_name = "FaceNet"
-    save_model_dir = "/home/sichen/models/target_model/" + model_name
-    os.makedirs(save_model_dir, exist_ok=True)
+    
    
     best_loss_all = 1e9
 
@@ -113,12 +114,20 @@ if __name__ == "__main__":
     batch_size = args[model_name]['batch_size']
     epochs = args[model_name]['epochs']
 
+    save_model_dir = "/home/sichen/models/target_model/" + model_name
+    os.makedirs(save_model_dir, exist_ok=True)
+
     if model_name.startswith("VGG16"):
         model = VGG16(1000)
     elif model_name.startswith('IR152'):
         model = IR152(1000)
     elif model_name == "FaceNet":
         model = FaceNet(1000)
+        path = '/home/sichen/models/target_model/backbone_ir50_ms1m_epoch120.pth'
+        model = torch.nn.DataParallel(model).cuda()
+        ckp = torch.load(path)
+        # import pdb; pdb.set_trace()
+        load_module_state_dict(model, ckp, add="module.feature.")
 
 
     model = model.cuda()
@@ -149,7 +158,10 @@ if __name__ == "__main__":
             img_size = x.size(2)
             bs = x.size(0)
 
-            out = model.predict(x)
+            if model_name == "FaceNet":
+                out = model.module.predict(x)
+            else:
+                out = model.predict(x)
             loss = criterion(out, label)
             # import pdb; pdb.set_trace()
             optimizer.zero_grad()
@@ -209,7 +221,7 @@ if __name__ == "__main__":
             shutil.copyfile(filename,
                             os.path.join(save_model_dir, 'model_best.pth'))
 
-        if e % 20 == 0:
+        if e % 10 == 0:
             shutil.copyfile(
                 filename,
                 save_model_dir + '/train_epoch_' + str(e) + '.pth')

@@ -9,7 +9,7 @@ log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1):
+def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -49,9 +49,21 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			Iden_Loss = criterion(out, iden)
 			Iden_Loss.backward(retain_graph=True)
 			Grad_Loss = 0
+			cnt = 0
+			
 			for param in T.parameters():
-				Grad_Loss += param.grad
-				
+				# print(param.grad.shape)
+				if param.grad is None:
+					# print("None")
+					# import pdb; pdb.set_trace()
+					continue
+				Grad_Loss += param.grad.mean().abs()
+				# cnt += 1
+				# print(cnt)
+
+			# import pdb; pdb.set_trace()
+			Grad_Loss = Grad_Loss.mean().abs()
+
 			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
 
 			Total_Loss.backward()

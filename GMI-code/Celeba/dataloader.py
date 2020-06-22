@@ -12,12 +12,12 @@ from torch.utils.data import DataLoader
 from torch.nn.modules.loss import _Loss
 from sklearn.model_selection import train_test_split
 
-mnist_path = "./data/MNIST"
-mnist_img_path = "./data/MNIST_imgs"
-cifar_path = "./data/CIFAR"
-cifar_img_path = "./data/CIFAR_imgs"
-os.makedirs(mnist_path, exist_ok=True)
-os.makedirs(mnist_img_path, exist_ok=True)
+# mnist_path = "./data/MNIST"
+# mnist_img_path = "./data/MNIST_imgs"
+# cifar_path = "./data/CIFAR"
+# cifar_img_path = "./data/CIFAR_imgs"
+# os.makedirs(mnist_path, exist_ok=True)
+# os.makedirs(mnist_img_path, exist_ok=True)
 
 class ImageFolder(data.Dataset):
     def __init__(self, args, file_path, mode):

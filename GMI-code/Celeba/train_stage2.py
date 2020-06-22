@@ -52,7 +52,8 @@ if __name__ == "__main__":
 
     global args, logger
     logger = get_logger()
-    model_name = "VGG16"
+    model_name_T = "VGG16"
+    model_name_E = "FaceNet"
     dataset_name = "celeba"
 
     file = "./config/attack" + ".json"
@@ -61,10 +62,10 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    path_G = '/home/sichen/mi/GMI-code/Celeba/result/models_celeba_gan/celeba_G.tar'
-    path_D = '/home/sichen/mi/GMI-code/Celeba/result/models_celeba_gan/celeba_D.tar'
-    path_T = '/home/sichen/mi/GMI-code/Celeba/target_model/' + model_name + '/model_best.pth'
-    path_E = '/home/sichen/mi/GMI-code/Celeba/target_model/backbone_ir50_ms1m_epoch120.pth'
+    path_G = '/home/sichen/models/celeba_G.tar'
+    path_D = '/home/sichen/models/celeba_D.tar'
+    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
+    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
     ###########################################
     ###########     load model       ##########
@@ -79,12 +80,12 @@ if __name__ == "__main__":
     ckp_D = torch.load(path_D)
     load_my_state_dict(D, ckp_D['state_dict'])
 
-    if model_name.startswith("VGG16"):
+    if model_name_T.startswith("VGG16"):
         T = VGG16(1000)
         E = FaceNet(1000)
-    elif model_name.startswith('IR152'):
+    elif model_name_T.startswith('IR152'):
         T = IR152(1000)
-    elif model_name == "FaceNet64":
+    elif model_name_T == "FaceNet64":
         T = FaceNet64(1000)
 
     T = torch.nn.DataParallel(T).cuda()
@@ -114,6 +115,6 @@ if __name__ == "__main__":
     for idx, (imgs, one_hot, label) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
         # inversion(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        inversion_grad_constraint(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        inversion_grad_constraint(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1)
     
     
