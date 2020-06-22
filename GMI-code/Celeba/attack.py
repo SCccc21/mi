@@ -9,7 +9,7 @@ log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1):
+def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -47,9 +47,11 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, ite
 
 			Prior_Loss = - label.mean()
 			Iden_Loss = criterion(out, iden)
+			Iden_Loss.backward(retain_graph=True)
 			Grad_Loss = 0
 			for param in T.parameters():
 				Grad_Loss += param.grad
+				
 			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
 
 			Total_Loss.backward()
@@ -102,7 +104,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, ite
 
 
 
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
+def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]

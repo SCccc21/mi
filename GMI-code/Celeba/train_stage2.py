@@ -14,7 +14,7 @@ import time
 import random
 import os, logging
 import numpy as np
-from attack import inversion
+from attack import inversion, inversion_grad_constraint
 from generator import Generator
 
 class AverageMeter(object):
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     ###########################################
     for idx, (imgs, one_hot, label) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
-        inversion(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-
+        # inversion(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        inversion_grad_constraint(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     
     
