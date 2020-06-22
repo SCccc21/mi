@@ -113,8 +113,8 @@ if __name__ == "__main__":
     batch_size = 64
     file = "./config/" + dataset_name + ".json"
     args = load_params(json_file=file)
-    result_img_dir = "./result/mask_img_reg"
-    result_model_dir = "./result/mask_model_reg"
+    result_img_dir = "/home/sichen/models/result/mask_img_reg"
+    result_model_dir = "/home/sichen/models/mask_model_reg"
     os.makedirs(result_img_dir, exist_ok=True)
     os.makedirs(result_model_dir, exist_ok=True)
 

@@ -101,7 +101,7 @@ if __name__ == "__main__":
     logger.info("=> creating model ...")
 
     model_name = "FaceNet"
-    save_model_dir = "./target_model/" + model_name
+    save_model_dir = "/home/sichen/models/target_model/" + model_name
     os.makedirs(save_model_dir, exist_ok=True)
    
     best_loss_all = 1e9
