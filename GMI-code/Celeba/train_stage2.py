@@ -111,8 +111,8 @@ if __name__ == "__main__":
     ###########################################
     ############         attack     ###########
     ###########################################
-    for i, (imgs, one_hot, label) in enumerate(data_loader):
-
+    for idx, (imgs, one_hot, label) in enumerate(data_loader):
+        print("--------------------- Attack batch [%s]------------------------------" % idx)
         inversion(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
 
     
