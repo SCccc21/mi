@@ -35,8 +35,8 @@ def gradient_penalty(x, y):
 
     return gp
 
-save_img_dir = "result/imgs_celeba_gan"
-save_model_dir= "result/models_celeba_gan"
+save_img_dir = "/home/sichen/models/result/imgs_celeba_gan"
+save_model_dir= "/home/sichen/models"
 os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 
