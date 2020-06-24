@@ -44,6 +44,8 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
+			
+			z.retain_grad()
 
 			Prior_Loss = - label.mean()
 			Iden_Loss = criterion(out, iden)
@@ -77,13 +79,14 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 
 			Prior_Loss_val = Prior_Loss.item()
 			Iden_Loss_val = Iden_Loss.item()
+			Grad_Loss_val = Grad_Loss.item()
 
 			if (i+1) % 300 == 0:
 				fake_img = G(z.detach())
 				eval_prob = E(utils.low2high(fake_img))[-1]
 				eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
 				acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
-				print("Iteration:{}\tPrior Loss:{:.2f}\tIden Loss:{:.2f}\tAttack Acc:{:.2f}".format(i+1, Prior_Loss_val, Iden_Loss_val, acc))
+				print("Iteration:{}\tPrior Loss:{:.2f}\tIden Loss:{:.2f}\tGrad Loss:{:.2f}\tAttack Acc:{:.2f}".format(i+1, Prior_Loss_val, Iden_Loss_val, Grad_Loss_val, acc))
 			
 		fake = G(z)
 		score = T(fake)[-1]
@@ -147,7 +150,6 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			fake = G(z)
 			label = D(fake)
 			out = T(fake)[-1]
-			# import pdb; pdb.set_trace()
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
@@ -161,6 +163,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			v_prev = v.clone()
 			gradient = z.grad.data
 			v = momentum * v - lr * gradient
+			prev_z = z
 			z = z + ( - momentum * v_prev + (1 + momentum) * v)
 			z = torch.clamp(z.detach(), -clip_range, clip_range).float()
 			z.requires_grad = True

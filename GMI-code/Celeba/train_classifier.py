@@ -54,6 +54,7 @@ def validate(val_loader, model, criterion):
     data_time = AverageMeter()
     loss_meter = None
 
+    model.eval()
     end = time.time()
 
     with torch.no_grad():
@@ -63,10 +64,7 @@ def validate(val_loader, model, criterion):
             imgs =  imgs.cuda()
             label = label.cuda()
 
-            if model_name == "FaceNet":
-                out = model.module.predict(imgs)
-            else:
-                out = model.predict(imgs)
+            out = model.module.predict(imgs)
 
             loss_val = criterion(out, label)
 
@@ -119,8 +117,10 @@ if __name__ == "__main__":
 
     if model_name.startswith("VGG16"):
         model = VGG16(1000)
+        model = torch.nn.DataParallel(model).cuda()
     elif model_name.startswith('IR152'):
         model = IR152(1000)
+        model = torch.nn.DataParallel(model).cuda()
     elif model_name == "FaceNet":
         model = FaceNet(1000)
         path = '/home/sichen/models/target_model/backbone_ir50_ms1m_epoch120.pth'
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         load_module_state_dict(model, ckp, add="module.feature.")
 
 
-    model = model.cuda()
+    # model = model.cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss().cuda()
 
@@ -139,11 +139,12 @@ if __name__ == "__main__":
     
     print("---------------------Training [%s]------------------------------" % model_name)
 
-    for e in range(epochs):
+    for e in range(2):
         batch_time = AverageMeter()
         data_time = AverageMeter()
         loss_meter = None
         end = time.time()
+        model.train()
         
         # training  
         for i, (imgs, one_hot, label) in enumerate(train_loader):
@@ -158,22 +159,14 @@ if __name__ == "__main__":
             img_size = x.size(2)
             bs = x.size(0)
 
-            if model_name == "FaceNet":
-                out = model.module.predict(x)
-            else:
-                out = model.predict(x)
+            out = model.module.predict(x)
+            
             loss = criterion(out, label)
             # import pdb; pdb.set_trace()
             optimizer.zero_grad()
-            a = list(model.parameters())[0].clone()
             loss.backward()
             optimizer.step()
-            b = list(model.parameters())[0].clone()
-            # print(torch.equal(a.data, b.data))
-            # print(list(model.parameters())[0].grad)
-            # print('--------')
-            
-
+           
             loss_meter = AverageMeter()
             loss_meter.update(loss.detach().cpu().numpy(), bs)
             batch_time.update(time.time() - end)
@@ -207,11 +200,11 @@ if __name__ == "__main__":
         loss_val = validate(val_loader, model, criterion)
         is_best = loss_val < best_loss_all
         best_loss_all = min(loss_val, best_loss_all)
-        filename = os.path.join(save_model_dir, 'model_latest.pth')
+        filename = os.path.join(save_model_dir, 'try.pth')
         torch.save(
             {
                 'epoch': e,
-                'state_dict': model.cpu().state_dict(),
+                'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'best_loss_all': best_loss_all
             }, filename)
@@ -225,4 +218,7 @@ if __name__ == "__main__":
             shutil.copyfile(
                 filename,
                 save_model_dir + '/train_epoch_' + str(e) + '.pth')
+    
+    
+
 

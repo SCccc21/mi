@@ -94,17 +94,16 @@ if __name__ == "__main__":
     E = torch.nn.DataParallel(E).cuda()
     ckp_E = torch.load(path_E)
     # import pdb; pdb.set_trace()
-    load_module_state_dict(E, ckp_E, add="module.feature.")
+    load_my_state_dict(E, ckp_E['state_dict'])
 
     # with mask
 
     ###########################################
-    ###########     load iden       ##########
+    ###########     load identity    ##########
     ###########################################
     batch_size = 64
     file_path = args['dataset']['train_file_path']
     data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
-    
     
 
     logger.info("=> Begin attacking ...")
@@ -112,9 +111,9 @@ if __name__ == "__main__":
     ###########################################
     ############         attack     ###########
     ###########################################
-    for idx, (imgs, one_hot, label) in enumerate(data_loader):
+    for idx, (imgs, one_hot, iden) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
-        # inversion(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        inversion_grad_constraint(G, D, T, E, label, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1)
+        inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1)
     
     

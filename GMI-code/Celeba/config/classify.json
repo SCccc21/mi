@@ -2,13 +2,13 @@
     "dataset":{
         "train_file_path": "/home/sichen/data/splits_11/identity_private_train.txt",
         "test_file_path": "/home/sichen/data/splits_11/identity_private_test.txt",
-        "model_name": "VGG16",
+        "model_name": "FaceNet",
         "name": "celeba",
         "img_path": "/home/sichen/data/img_align_celeba",
         "n_classes":1000
     },
 
-    "train_gan - fist stage":{
+    "train_gan - first stage":{
         "lr": 0.004,
         "batch_size": 64,
         "z_dim": 100,
