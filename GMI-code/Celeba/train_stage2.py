@@ -17,23 +17,6 @@ import numpy as np
 from attack import inversion, inversion_grad_constraint
 from generator import Generator
 
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
 
 #logger
 def get_logger():
@@ -64,37 +47,39 @@ if __name__ == "__main__":
 
     path_G = '/home/sichen/models/celeba_G.tar'
     path_D = '/home/sichen/models/celeba_D.tar'
-    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
-    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
+    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_latest.pth'
+    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_latest.pth'
 
     ###########################################
     ###########     load model       ##########
     ###########################################
     # no mask
     G = Generator(z_dim)
-    torch.nn.DataParallel(G).cuda()
+    G = torch.nn.DataParallel(G).cuda()
     D = DGWGAN(3)
-    torch.nn.DataParallel(D).cuda()
+    D = torch.nn.DataParallel(D).cuda()
     ckp_G = torch.load(path_G)
-    load_my_state_dict(G, ckp_G['state_dict'])
+    G.load_state_dict(ckp_G['state_dict'], strict=False)
     ckp_D = torch.load(path_D)
-    load_my_state_dict(D, ckp_D['state_dict'])
+    D.load_state_dict(ckp_D['state_dict'], strict=False)
 
     if model_name_T.startswith("VGG16"):
         T = VGG16(1000)
-        E = FaceNet(1000)
     elif model_name_T.startswith('IR152'):
         T = IR152(1000)
     elif model_name_T == "FaceNet64":
         T = FaceNet64(1000)
 
-    T = torch.nn.DataParallel(T).cuda()
+    
+    # T = torch.nn.DataParallel(T).cuda()
+    T = T.cuda()
     ckp_T = torch.load(path_T)
-    load_my_state_dict(T, ckp_T['state_dict'])
+    T.load_state_dict(ckp_T['state_dict'], strict=False)
+
+    E = FaceNet(1000)
     E = torch.nn.DataParallel(E).cuda()
     ckp_E = torch.load(path_E)
-    # import pdb; pdb.set_trace()
-    load_my_state_dict(E, ckp_E['state_dict'])
+    E.load_state_dict(ckp_E['state_dict'], strict=False)
 
     # with mask
 
@@ -104,13 +89,46 @@ if __name__ == "__main__":
     batch_size = 64
     file_path = args['dataset']['train_file_path']
     data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
-    
 
-    logger.info("=> Begin attacking ...")
+
+    ###########################################
+    ###########   test classifier    ##########
+    ###########################################
+    '''
+    print("---------------------Test classifiers accuracy------------------------------")
+    criterion = nn.CrossEntropyLoss().cuda()
+    T.eval()
+    E.eval()
+    # train set
+    for i, (imgs, one_hot, iden) in enumerate(data_loader):
+        # iden = iden.view(-1).long().cuda()
+        x = imgs.cuda()
+        iden = iden.cuda()
+        img_size = x.size(2)
+        bs = x.size(0)
+        # out = E.module.predict(low2high(x))  #"FaceNet"
+        # out = T.module.predict(x)
+        out_T = T(x)[-1]
+        out_E = E(low2high(x))[-1]
+
+        eval_iden_T = torch.argmax(out_T, dim=1).view(-1)
+        eval_iden_E = torch.argmax(out_E, dim=1).view(-1)
+        train_acc_T = iden.eq(eval_iden_T.long()).sum().item() * 1.0 / bs
+        train_acc_E = iden.eq(eval_iden_E.long()).sum().item() * 1.0 / bs
+        loss_T = criterion(out_T, iden)
+        loss_E = criterion(out_E, iden)
+
+        print("training acc of target classifier:", train_acc_T)
+        print("training acc of evaluation classifier:", train_acc_E)
+    import pdb; pdb.set_trace()
+    '''
+
 
     ###########################################
     ############         attack     ###########
     ###########################################
+    logger.info("=> Begin attacking ...")
+
     for idx, (imgs, one_hot, iden) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
         inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)

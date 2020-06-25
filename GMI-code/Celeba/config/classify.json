@@ -2,7 +2,7 @@
     "dataset":{
         "train_file_path": "/home/sichen/data/splits_11/identity_private_train.txt",
         "test_file_path": "/home/sichen/data/splits_11/identity_private_test.txt",
-        "model_name": "FaceNet",
+        "model_name": "VGG16",
         "name": "celeba",
         "img_path": "/home/sichen/data/img_align_celeba",
         "n_classes":1000
@@ -19,13 +19,13 @@
     "FaceNet":{
         "lr": 1e-2,
         "batch_size": 64,
-        "epochs": 50
+        "epochs": 20
     },
 
     "VGG16":{
         "lr": 1e-2,
         "batch_size": 64,
-        "epochs": 50
+        "epochs": 30
     }
 
 

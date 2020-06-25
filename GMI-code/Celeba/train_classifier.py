@@ -139,7 +139,7 @@ if __name__ == "__main__":
     
     print("---------------------Training [%s]------------------------------" % model_name)
 
-    for e in range(2):
+    for e in range(epochs):
         batch_time = AverageMeter()
         data_time = AverageMeter()
         loss_meter = None
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         loss_val = validate(val_loader, model, criterion)
         is_best = loss_val < best_loss_all
         best_loss_all = min(loss_val, best_loss_all)
-        filename = os.path.join(save_model_dir, 'try.pth')
+        filename = os.path.join(save_model_dir, 'model_latest.pth')
         torch.save(
             {
                 'epoch': e,

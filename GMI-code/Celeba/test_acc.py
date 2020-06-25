@@ -59,11 +59,37 @@ if __name__ == "__main__":
         T = VGG16(1000)
         E = FaceNet(1000)
 
-    T = torch.nn.DataParallel(T).cuda()
+    # T = torch.nn.DataParallel(T).cuda()
+    T= T.cuda()
     ckp_T = torch.load(path_T)
-    T.load_state_dict(ckp_T['state_dict'], strict=False)
     E = torch.nn.DataParallel(E).cuda()
     ckp_E = torch.load(path_E)
+
+    if 0:
+        print("Pre-trained model_latest.pth (ckp_E) state_dict:")
+        n = 0
+        for k,v in ckp_E['state_dict'].items():
+            print ('idx = %d' %n, k, v.shape)
+            n += 1
+        
+        #NOTE: added by CCJ:
+        # Print model's state_dict
+        print("\n\nModel VGG16 state_dict:")
+        n = 0
+        for param_tensor in T.state_dict():
+            print('idx = ', n, "\t", param_tensor, "\t", T.state_dict()[param_tensor].size())
+            n += 1
+            if 'module.' in param_tensor:
+                tmp_k = param_tensor[len('module.'):]
+            else:
+                tmp_k = param_tensor
+            if tmp_k not in ckp_T['state_dict']:
+                print ("not found:", tmp_k)
+    # import pdb; pdb.set_trace()
+
+    T.load_state_dict(ckp_T['state_dict'], strict=False)
+    # load_module_state_dict(T, ckp_T, add='module.', strict=False)
+    
     E.load_state_dict(ckp_E['state_dict'], strict=False)
 
     train_set, train_loader = init_dataloader(args, train_path, batch_size, mode="classify")
@@ -74,6 +100,8 @@ if __name__ == "__main__":
     T.eval()
     E.eval()
 
+    
+
     print("---------------------Test [%s] accuracy------------------------------" % model_name)
     # train set
     for i, (imgs, one_hot, iden) in enumerate(train_loader):
@@ -82,15 +110,14 @@ if __name__ == "__main__":
         iden = iden.cuda()
         img_size = x.size(2)
         bs = x.size(0)
-        # out = E.module.predict(low2high(x))  #"FaceNet"
-        # out = T.module.predict(x)
-        out = E(low2high(x))[-1]
+        out = T(x)[-1]
+        # out = E(low2high(x))[-1]
 
         eval_iden = torch.argmax(out, dim=1).view(-1)
         train_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
         loss = criterion(out, iden)
 
-        # import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         print("training acc:", train_acc)
 
     # test set
@@ -100,8 +127,7 @@ if __name__ == "__main__":
         iden = iden.cuda()
         img_size = x.size(2)
         bs = x.size(0)
-        # out = E.module.predict(x)  #"FaceNet"
-        out = E(x)[-1]
+        out = T(x)[-1]
         # out = E(low2high(x))[-1]
 
         eval_iden = torch.argmax(out, dim=1).view(-1)
