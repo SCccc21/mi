@@ -47,8 +47,8 @@ if __name__ == "__main__":
 
     path_G = '/home/sichen/models/celeba_G.tar'
     path_D = '/home/sichen/models/celeba_D.tar'
-    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_latest.pth'
-    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_latest.pth'
+    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
+    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
     ###########################################
     ###########     load model       ##########
@@ -71,8 +71,8 @@ if __name__ == "__main__":
         T = FaceNet64(1000)
 
     
-    # T = torch.nn.DataParallel(T).cuda()
-    T = T.cuda()
+    T = torch.nn.DataParallel(T).cuda()
+    # T = T.cuda()
     ckp_T = torch.load(path_T)
     T.load_state_dict(ckp_T['state_dict'], strict=False)
 

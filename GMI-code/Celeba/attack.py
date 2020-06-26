@@ -51,7 +51,6 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			Iden_Loss = criterion(out, iden)
 			Iden_Loss.backward(retain_graph=True)
 			Grad_Loss = 0
-			cnt = 0
 			
 			for param in T.parameters():
 				# print(param.grad.shape)
@@ -60,8 +59,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 					# import pdb; pdb.set_trace()
 					continue
 				Grad_Loss += param.grad.mean().abs()
-				# cnt += 1
-				# print(cnt)
+				
 
 			# import pdb; pdb.set_trace()
 			Grad_Loss = Grad_Loss.mean().abs()
@@ -96,7 +94,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		cnt = 0
 		for i in range(bs):
 			gt = iden[i].item()
-			if score[i, i].item() > max_score[i].item():
+			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, i]
 				max_iden[i] = eval_iden[i]
 				z_hat[i, :] = z[i, :]
@@ -105,7 +103,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 				flag[i] = 1
 		
 		interval = time.time() - tf
-		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / 100))
+		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
 	correct = 0
 	for i in range(bs):
@@ -186,7 +184,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		cnt = 0
 		for i in range(bs):
 			gt = iden[i].item()
-			if score[i, i].item() > max_score[i].item():
+			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, i]
 				max_iden[i] = eval_iden[i]
 				z_hat[i, :] = z[i, :]
@@ -195,7 +193,8 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 				flag[i] = 1
 		
 		interval = time.time() - tf
-		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / 100))
+		#NOTE: why use 100 instead of bs? 
+		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
 	correct = 0
 	for i in range(bs):
@@ -204,7 +203,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			correct += 1
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs
+	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  #
 	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
 	
 
