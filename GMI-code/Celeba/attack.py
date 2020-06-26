@@ -9,7 +9,7 @@ log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1):
+def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e2, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -40,7 +40,6 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			fake = G(z)
 			label = D(fake)
 			out = T(fake)[-1]
-			# import pdb; pdb.set_trace()
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
@@ -61,7 +60,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 				Grad_Loss += param.grad.mean().abs()
 				
 
-			# import pdb; pdb.set_trace()
+			import pdb; pdb.set_trace()
 			Grad_Loss = Grad_Loss.mean().abs()
 
 			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
@@ -95,7 +94,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		for i in range(bs):
 			gt = iden[i].item()
 			if score[i, gt].item() > max_score[i].item():
-				max_score[i] = score[i, i]
+				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
 				z_hat[i, :] = z[i, :]
 			if eval_iden[i].item() == gt:
@@ -185,7 +184,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		for i in range(bs):
 			gt = iden[i].item()
 			if score[i, gt].item() > max_score[i].item():
-				max_score[i] = score[i, i]
+				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
 				z_hat[i, :] = z[i, :]
 			if eval_iden[i].item() == gt:

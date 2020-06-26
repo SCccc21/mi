@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
         end = time.time()
         interval = end - start
-        import pdb; pdb.set_trace()
+        
         print("Epoch:%d \t Time:%.2f" % (epoch, interval))
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
