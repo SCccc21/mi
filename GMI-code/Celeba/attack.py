@@ -9,7 +9,7 @@ log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e2, iter_times=1500, clip_range=1):
+def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -43,28 +43,29 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
-			
-			z.retain_grad()
+			for param in T.parameters():
+				if param.grad is not None:
+					param.grad.data.zero_()	
 
 			Prior_Loss = - label.mean()
 			Iden_Loss = criterion(out, iden)
+
 			Iden_Loss.backward(retain_graph=True)
 			Grad_Loss = 0
-			
 			for param in T.parameters():
 				# print(param.grad.shape)
 				if param.grad is None:
 					# print("None")
-					# import pdb; pdb.set_trace()
 					continue
-				Grad_Loss += param.grad.mean().abs()
+				Grad_Loss += param.grad.data.mean().abs()
 				
-
-			import pdb; pdb.set_trace()
+			# import pdb; pdb.set_trace()
 			Grad_Loss = Grad_Loss.mean().abs()
 
 			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
 
+			if z.grad is not None:
+				z.grad.data.zero_()
 			Total_Loss.backward()
 			
 			v_prev = v.clone()
@@ -111,9 +112,8 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			correct += 1
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs
+	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
 	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
-
 
 
 def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
@@ -160,7 +160,6 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			v_prev = v.clone()
 			gradient = z.grad.data
 			v = momentum * v - lr * gradient
-			prev_z = z
 			z = z + ( - momentum * v_prev + (1 + momentum) * v)
 			z = torch.clamp(z.detach(), -clip_range, clip_range).float()
 			z.requires_grad = True
@@ -192,7 +191,6 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 				flag[i] = 1
 		
 		interval = time.time() - tf
-		#NOTE: why use 100 instead of bs? 
 		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
 	correct = 0
@@ -202,7 +200,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			correct += 1
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  #
+	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
 	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
 	
 

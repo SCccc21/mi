@@ -85,10 +85,8 @@ if __name__ == "__main__":
                 tmp_k = param_tensor
             if tmp_k not in ckp_T['state_dict']:
                 print ("not found:", tmp_k)
-    # import pdb; pdb.set_trace()
 
     T.load_state_dict(ckp_T['state_dict'], strict=False)
-    # load_module_state_dict(T, ckp_T, add='module.', strict=False)
     
     E.load_state_dict(ckp_E['state_dict'], strict=False)
 
@@ -117,7 +115,6 @@ if __name__ == "__main__":
         train_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
         loss = criterion(out, iden)
 
-        import pdb; pdb.set_trace()
         print("training acc:", train_acc)
 
     # test set

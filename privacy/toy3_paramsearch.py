@@ -78,6 +78,10 @@ def main():
         for e in range(att_epochs):
             x_adv.requires_grad = True
             target_out = target_model(x_adv)
+
+            for param in target_model.parameters():
+                param.grad.data.zero_()
+
             loss1 = torch.mean((train_label - target_out) ** 2)
             loss1.backward(retain_graph=True)
             loss2 = 0

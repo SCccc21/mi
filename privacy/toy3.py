@@ -89,11 +89,14 @@ def main():
         # import pdb; pdb.set_trace()
 
         for idx in range(3):
+            for param in target_model.parameters():
+                param.grad.data.zero_()
+
             loss1 = (row_y[idx] - target_out[idx]).abs()
             loss1.backward(retain_graph=True)
             loss2 = 0
             for param in target_model.parameters():
-                loss2 += param.grad
+                loss2 += param.grad.data
                 
             loss = loss1 + lam * torch.sum(loss2.abs())
             losses.append(loss)

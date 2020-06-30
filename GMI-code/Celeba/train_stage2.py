@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     for idx, (imgs, one_hot, iden) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
-        inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=1e4, iter_times=1500, clip_range=1)
+        # inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     
     

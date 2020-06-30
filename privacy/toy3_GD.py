@@ -74,14 +74,17 @@ def main():
         x_adv.requires_grad = True
         target_out = target_model(x_adv).view(-1)
         # loss1 = torch.mean((train_label - target_out) ** 2)
+        for param in target_model.parameters():
+            param.grad.data.zero_()
+
         loss1 = torch.mean((train_label - target_out).abs())
         loss1.backward(retain_graph=True)
         loss2 = 0
         for param in target_model.parameters():
-            loss2 += param.grad
+            loss2 += param.grad.data.mean().abs()
             # print(param)
         
-        loss = loss1 + lam * torch.sum(loss2.abs())
+        loss = loss1 + lam * loss2.mean().abs()
         
         if x_adv.grad is not None:
             x_adv.grad.data.fill_(0)

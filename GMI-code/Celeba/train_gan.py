@@ -119,12 +119,12 @@ if __name__ == "__main__":
         end = time.time()
         interval = end - start
         
-        print("Epoch:%d \t Time:%.2f" % (epoch, interval))
+        print("Epoch:%d \t Time:%.2f\t Generator loss:%.2f" % (epoch, interval, g_loss))
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
+        #     save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D.tar"))
+        # torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G.tar"))
+        # torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D.tar"))
 
