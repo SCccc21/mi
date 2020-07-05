@@ -31,7 +31,7 @@ class ImageFolder(data.Dataset):
         self.image_list = self.load_img()
         self.num_img = len(self.image_list)
         self.n_classes = args["dataset"]["n_classes"]
-        print("Load " + str(self.num_img) + " images")
+        # print("Load " + str(self.num_img) + " images")
 
     def get_list(self, file_path):
         name_list, label_list = [], []

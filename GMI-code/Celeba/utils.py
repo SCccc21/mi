@@ -31,6 +31,30 @@ class Tee(object):
     def flush(self):
         self.file.flush()
 
+class LinearWeightNorm(torch.nn.Module):
+    def __init__(self, in_features, out_features, bias=True, weight_scale=None, weight_init_stdv=0.1):
+        super(LinearWeightNorm, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = Parameter(torch.randn(out_features, in_features) * weight_init_stdv)
+        if bias:
+            self.bias = Parameter(torch.zeros(out_features))
+        else:
+            self.register_parameter('bias', None)
+        if weight_scale is not None:
+            assert type(weight_scale) == int
+            self.weight_scale = Parameter(torch.ones(out_features, 1) * weight_scale)
+        else:
+            self.weight_scale = 1 
+    def forward(self, x):
+        W = self.weight * self.weight_scale / torch.sqrt(torch.sum(self.weight ** 2, dim = 1, keepdim = True))
+        return F.linear(x, W, self.bias)
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+            + 'in_features=' + str(self.in_features) \
+            + ', out_features=' + str(self.out_features) \
+            + ', weight_scale=' + str(self.weight_scale) + ')'
+
 def weights_init(m):
     if isinstance(m, model.MyConvo2d): 
         if m.conv.weight is not None:
@@ -46,7 +70,7 @@ def weights_init(m):
         if m.bias is not None:
             init.constant_(m.bias, 0.0)
 
-def init_dataloader(args, file_path, batch_size=64, mode="gan"):
+def init_dataloader(args, file_path, batch_size=64, mode="gan", iterator=False):
     tf = time.time()
 
     if mode == "attack":
@@ -60,14 +84,26 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan"):
     else:
         data_set = dataloader.GrayFolder(args, file_path, mode)
         
-    data_loader = torch.utils.data.DataLoader(data_set,
+    if iterator:
+        data_loader = torch.utils.data.DataLoader(data_set,
                                 batch_size=batch_size,
                                 shuffle=shuffle_flag,
+                                drop_last=True,
                                 num_workers=0,
+                                pin_memory=True).__iter__()
+    else:
+        data_loader = torch.utils.data.DataLoader(data_set,
+                                batch_size=batch_size,
+                                shuffle=shuffle_flag,
+                                drop_last=True,
+                                num_workers=4,
                                 pin_memory=True)
+        interval = time.time() - tf
+        print('Initializing data loader took %ds' % interval)
+    # if iterator:
+    #     data_loader = data_loader.__iter__()
 
-    interval = time.time() - tf
-    print('Initializing data loader took %ds' % interval)
+    
     return data_set, data_loader
 
 def load_params(json_file):

@@ -32,6 +32,8 @@ def get_logger():
 
 
 if __name__ == "__main__":
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -45,8 +47,8 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    path_G = '/home/sichen/models/celeba_G.tar'
-    path_D = '/home/sichen/models/celeba_D.tar'
+    path_G = '/home/sichen/models/GAN/improved_celeba_G.tar'
+    path_D = '/home/sichen/models/GAN/improved_celeba_D.tar'
     path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
     path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
@@ -87,7 +89,7 @@ if __name__ == "__main__":
     ###########     load identity    ##########
     ###########################################
     batch_size = 64
-    file_path = args['dataset']['train_file_path']
+    file_path = args['dataset']['attack_file_path']
     data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
 
 
@@ -131,7 +133,7 @@ if __name__ == "__main__":
 
     for idx, (imgs, one_hot, iden) in enumerate(data_loader):
         print("--------------------- Attack batch [%s]------------------------------" % idx)
-        # inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     
     
