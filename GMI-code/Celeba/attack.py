@@ -151,8 +151,8 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			if z.grad is not None:
 				z.grad.data.zero_()
 
-			# Prior_Loss = - label.mean()
-			Prior_Loss = 
+			Prior_Loss = - label.mean()
+			# Prior_Loss = 
 			Iden_Loss = criterion(out, iden)
 			Total_Loss = Prior_Loss + lamda * Iden_Loss
 

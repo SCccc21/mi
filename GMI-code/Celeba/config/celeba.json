@@ -1,6 +1,6 @@
 {
     "dataset":{
-        "train_file_path": "/home/sichen/data/splits_11/identity_public_full.txt",
+        "train_file_path": "/home/sichen/data/ganset.txt",
         "test_file_path": "/home/sichen/data/splits_11/identity_public_test.txt",
         "model_name": "train_gan - first stage",
         "name": "celeba",
@@ -12,8 +12,9 @@
         "lr": 0.0002,
         "batch_size": 64,
         "z_dim": 100,
-        "epochs": 110,
-        "n_critic": 5
+        "epochs": 120,
+        "n_critic": 5,
+        "unlabel_weight": 10
     },
 
     "train_gan - second stage":{

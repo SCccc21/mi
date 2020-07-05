@@ -42,7 +42,7 @@ def log_sum_exp(x, axis = 1):
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(1)), dim = axis))
 
 save_img_dir = "/home/sichen/models/result/imgs_improved_celeba_gan"
-save_model_dir= "/home/sichen/models/GAN"
+save_model_dir= "/home/sichen/models/improvedGAN"
 os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 
@@ -56,6 +56,7 @@ utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
     
     file = "./config/" + dataset_name + ".json"
     args = load_params(json_file=file)

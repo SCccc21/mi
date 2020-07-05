@@ -36,7 +36,7 @@ def gradient_penalty(x, y):
     return gp
 
 save_img_dir = "/home/sichen/models/result/imgs_celeba_gan"
-save_model_dir= "/home/sichen/models"
+save_model_dir= "/home/sichen/models/GAN"
 os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 
@@ -48,6 +48,7 @@ log_file = "GAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
     
     file = "./config/" + dataset_name + ".json"
     args = load_params(json_file=file)
@@ -123,8 +124,8 @@ if __name__ == "__main__":
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-        #     save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
         
-        # torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G.tar"))
-        # torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D.tar"))
 

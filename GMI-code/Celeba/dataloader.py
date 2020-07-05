@@ -33,13 +33,18 @@ class ImageFolder(data.Dataset):
         self.n_classes = args["dataset"]["n_classes"]
         # print("Load " + str(self.num_img) + " images")
 
+    
     def get_list(self, file_path):
         name_list, label_list = [], []
         f = open(file_path, "r")
         for line in f.readlines():
-            img_name, iden = line.strip().split(' ')
+            if self.mode == "gan":
+                img_name = line
+            else:
+                img_name, iden = line.strip().split(' ')
+                label_list.append(int(iden))
             name_list.append(img_name)
-            label_list.append(int(iden))
+            
 
         return name_list, label_list
 
@@ -47,11 +52,14 @@ class ImageFolder(data.Dataset):
     def load_img(self):
         img_list = []
         for i, img_name in enumerate(self.name_list):
-            if img_name.endswith(".jpg"):
-                path = self.img_path + "/" + img_name
-                img = PIL.Image.open(path)
-                img = img.convert('RGB')
-                img_list.append(img)
+            # print(img_name)
+            # if img_name.endswith(".png"):
+            name = os.path.splitext(img_name)[0]
+            # print(name)
+            path = self.img_path + "/" + name + ".jpg"
+            img = PIL.Image.open(path)
+            img = img.convert('RGB')
+            img_list.append(img)
         return img_list
     
     def get_processor(self):
