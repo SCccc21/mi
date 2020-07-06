@@ -131,7 +131,7 @@ if __name__ == "__main__":
             _, output_fake =  DG(f_imgs)
             # import pdb; pdb.set_trace()
 
-            loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1)))
+            # loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1)))
             loss_unlab = 0.5*(torch.mean(F.softplus(log_sum_exp(output_unlabel)))-torch.mean(log_sum_exp(output_unlabel))+torch.mean(F.softplus(log_sum_exp(output_fake))))
             dg_loss = loss_lab + loss_unlab
             

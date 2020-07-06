@@ -116,6 +116,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 	correct_5 = torch.sum(flag)
 	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
 	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
+	return acc, acc_5
 
 
 def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
@@ -207,6 +208,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 	correct_5 = torch.sum(flag)
 	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
 	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
+	return acc, acc_5
 	
 
 if __name__ == '__main__':

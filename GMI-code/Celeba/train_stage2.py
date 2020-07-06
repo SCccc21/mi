@@ -60,7 +60,8 @@ if __name__ == "__main__":
     # no mask
     G = Generator(z_dim)
     G = torch.nn.DataParallel(G).cuda()
-    D = DGWGAN(3)
+    # D = DGWGAN(3)
+    D = Discriminator(3, 64, 1000)
     D = torch.nn.DataParallel(D).cuda()
     ckp_G = torch.load(path_G)
     G.load_state_dict(ckp_G['state_dict'], strict=False)
@@ -140,12 +141,23 @@ if __name__ == "__main__":
         inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
         # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     '''
+
+    total_acc, total_acc5 = 0, 0
     # no auxilary
-    iden = torch.from_numpy(np.arange(60))
-    for idx in range(5):
-        # import pdb; pdb.set_trace()
-        print("--------------------- Attack batch [%s]------------------------------" % idx)
-        inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=100, iter_times=1500, clip_range=1)
-        iden = iden + 60
+    for i in range(10):
+
+        iden = torch.from_numpy(np.arange(60))
+        for idx in range(5):
+            print("--------------------- Attack batch [%s]------------------------------" % idx)
+            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=100, iter_times=1500, clip_range=1)
+            iden = iden + 60
+
+        total_acc += acc
+        total_acc5 += acc5
+
+    aver_acc = total_acc / 10
+    aver_acc5 = total_acc5 / 10
+    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+
     
