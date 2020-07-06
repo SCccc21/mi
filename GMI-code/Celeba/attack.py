@@ -2,6 +2,8 @@ import torch, os, time, random, generator, discri, classify, utils
 import numpy as np 
 import torch.nn as nn
 import torchvision.utils as tvls
+import torch.nn.functional as F
+from utils import log_sum_exp
 
 device = "cuda"
 num_classes = 1000
@@ -145,14 +147,16 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			
 		for i in range(iter_times):
 			fake = G(z)
-			label = D(fake)
+			# label = D(fake)
+			_, label =  D(fake)
 			out = T(fake)[-1]
+			
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
 
-			Prior_Loss = - label.mean()
-			# Prior_Loss = 
+			# Prior_Loss = - label.mean()
+			Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
 			Iden_Loss = criterion(out, iden)
 			Total_Loss = Prior_Loss + lamda * Iden_Loss
 

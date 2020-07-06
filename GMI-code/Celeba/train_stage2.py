@@ -47,10 +47,10 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    # path_G = '/home/sichen/models/GAN/improved_celeba_G.tar'
-    # path_D = '/home/sichen/models/GAN/improved_celeba_D.tar'
-    path_G = '/home/sichen/models/GAN/celeba_G.tar'
-    path_D = '/home/sichen/models/GAN/celeba_D.tar'
+    path_G = '/home/sichen/models/improvedGAN/improved_celeba_G.tar'
+    path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
+    # path_G = '/home/sichen/models/GAN/celeba_G.tar'
+    # path_D = '/home/sichen/models/GAN/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
     path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
@@ -146,6 +146,6 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         print("--------------------- Attack batch [%s]------------------------------" % idx)
         inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=100, iter_times=1500, clip_range=1)
         iden = iden + 60
     
