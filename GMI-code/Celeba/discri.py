@@ -48,7 +48,7 @@ class MinibatchDiscriminator(nn.Module):
         self.layer2 = conv_ln_lrelu(dim, dim*2, 5, 2, 2)
         self.layer3 = conv_ln_lrelu(dim*2, dim*4, 5, 2, 2)
         self.layer4 = conv_ln_lrelu(dim*4, dim*4, 3, 2, 1)
-        self.mbd1 = MiniBatchDiscrimination(dim*4*4*4, 64, 50)
+        self.mbd1 = MinibatchDiscrimination(dim*4*4*4, 64, 50)
         self.fc_layer = nn.Linear(dim*4*4*4+64, self.n_classes)
 
     def forward(self, x):

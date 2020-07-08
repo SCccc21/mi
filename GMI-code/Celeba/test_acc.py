@@ -32,10 +32,10 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    path_G = '/home/sichen/models/celeba_G.tar'
-    path_D = '/home/sichen/models/celeba_D.tar'
-    path_T = '/home/sichen/models/target_model/VGG16/model_latest.pth'
-    path_E = '/home/sichen/models/target_model/FaceNet/model_latest.pth'
+    # path_T = '/home/sichen/models/target_model/VGG16/model_latest.pth'
+    # path_E = '/home/sichen/models/target_model/FaceNet/model_latest.pth'
+    path_T = '/home/sichen/models/yuheng/VGG16.tar'
+    path_E = '/home/sichen/models/yuheng/FaceNet.tar'
 
     train_path = args['dataset']['train_file_path']
     val_path = args['dataset']['test_file_path']
@@ -135,3 +135,4 @@ if __name__ == "__main__":
         print("val acc:", val_acc)
 
     aver_acc = total_acc / (i+1)
+    print("average val acc:", val_acc)

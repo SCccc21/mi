@@ -11,7 +11,7 @@ import torchvision.utils as tvls
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-from discri import DGWGAN, Discriminator
+from discri import DGWGAN, Discriminator, MinibatchDiscriminator
 from generator import Generator
 from classify import *
 
@@ -90,7 +90,8 @@ if __name__ == "__main__":
     dataset, dataloader = init_dataloader(args, file_path, batch_size, mode="gan")
 
     G = Generator(z_dim)
-    DG = Discriminator(3, 64, 1000)
+    # DG = Discriminator(3, 64, 1000)
+    DG = MinibatchDiscriminator()
     
     G = torch.nn.DataParallel(G).cuda()
     DG = torch.nn.DataParallel(DG).cuda()
@@ -175,11 +176,20 @@ if __name__ == "__main__":
         interval = end - start
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
+
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D.tar"))
+
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_result_image_{}.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_result_image_{}.png".format(epoch)), nrow = 8)
+            # shutil.copyfile(
+            #     os.path.join(save_model_dir, "improved_mb_celeba_G.tar"),
+            #     save_model_dir + '/improved_mb_G_train_epoch_' + str(epoch) + '.tar')
+            # shutil.copyfile(
+            #     os.path.join(save_model_dir, "improved_mb_celeba_D.tar"),
+            #     save_model_dir + '/improved_mb_D_train_epoch_' + str(epoch) + '.tar')
         
-        # torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_celeba_G.tar"))
-        # torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_celeba_D.tar"))
+        
 

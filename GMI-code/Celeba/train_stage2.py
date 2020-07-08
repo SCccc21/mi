@@ -32,8 +32,8 @@ def get_logger():
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -47,12 +47,16 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    path_G = '/home/sichen/models/improvedGAN/improved_celeba_G.tar'
-    path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
+    # path_G = '/home/sichen/models/improvedGAN/improved_celeba_G.tar'
+    # path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
     # path_G = '/home/sichen/models/GAN/celeba_G.tar'
     # path_D = '/home/sichen/models/GAN/celeba_D.tar'
-    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
-    path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
+    path_G = '/home/sichen/models/yuheng/celeba_G.tar'
+    path_D = '/home/sichen/models/yuheng/celeba_D.tar'
+    path_T = '/home/sichen/models/yuheng/VGG16.tar'
+    path_E = '/home/sichen/models/yuheng/FaceNet.tar'
+    # path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
+    # path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
     ###########################################
     ###########     load model       ##########
@@ -96,38 +100,6 @@ if __name__ == "__main__":
     data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
 
 
-    ###########################################
-    ###########   test classifier    ##########
-    ###########################################
-    '''
-    print("---------------------Test classifiers accuracy------------------------------")
-    criterion = nn.CrossEntropyLoss().cuda()
-    T.eval()
-    E.eval()
-    # train set
-    for i, (imgs, one_hot, iden) in enumerate(data_loader):
-        # iden = iden.view(-1).long().cuda()
-        x = imgs.cuda()
-        iden = iden.cuda()
-        img_size = x.size(2)
-        bs = x.size(0)
-        # out = E.module.predict(low2high(x))  #"FaceNet"
-        # out = T.module.predict(x)
-        out_T = T(x)[-1]
-        out_E = E(low2high(x))[-1]
-
-        eval_iden_T = torch.argmax(out_T, dim=1).view(-1)
-        eval_iden_E = torch.argmax(out_E, dim=1).view(-1)
-        train_acc_T = iden.eq(eval_iden_T.long()).sum().item() * 1.0 / bs
-        train_acc_E = iden.eq(eval_iden_E.long()).sum().item() * 1.0 / bs
-        loss_T = criterion(out_T, iden)
-        loss_E = criterion(out_E, iden)
-
-        print("training acc of target classifier:", train_acc_T)
-        print("training acc of evaluation classifier:", train_acc_E)
-    import pdb; pdb.set_trace()
-    '''
-
 
     ###########################################
     ############         attack     ###########
@@ -142,19 +114,23 @@ if __name__ == "__main__":
         # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     '''
 
-    total_acc, total_acc5 = 0, 0
+    total_acc, total_acc5 = [0]*5, [0]*5
     # no auxilary
     for i in range(10):
-
+        acc_list = []
+        acc5_list = []
         iden = torch.from_numpy(np.arange(60))
+
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
             acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
             # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=100, iter_times=1500, clip_range=1)
             iden = iden + 60
+            acc_list.append(acc)
+            acc5_list.append(acc5)
 
-        total_acc += acc
-        total_acc5 += acc5
+        total_acc += acc_list
+        total_acc5 += acc5_list
 
     aver_acc = total_acc / 10
     aver_acc5 = total_acc5 / 10
