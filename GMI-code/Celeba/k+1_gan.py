@@ -97,6 +97,7 @@ if __name__ == "__main__":
 
     dg_optimizer = torch.optim.Adam(DG.parameters(), lr=lr, betas=(0.5, 0.999))
     g_optimizer = torch.optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
+    criterion = nn.CrossEntropyLoss().cuda()
     
 
     step = 0
@@ -131,6 +132,7 @@ if __name__ == "__main__":
             _, output_fake =  DG(f_imgs)
             # import pdb; pdb.set_trace()
 
+            loss_lab = criterion(output_label, y)
             # loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1)))
             loss_unlab = 0.5*(torch.mean(F.softplus(log_sum_exp(output_unlabel)))-torch.mean(log_sum_exp(output_unlabel))+torch.mean(F.softplus(log_sum_exp(output_fake))))
             dg_loss = loss_lab + loss_unlab
@@ -157,7 +159,9 @@ if __name__ == "__main__":
 
                 mom_gen = torch.mean(mom_gen, dim = 0)
                 mom_unlabel = torch.mean(mom_unlabel, dim = 0)
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs())
+                
+                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())  # feature matching loss
+                g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake))))
 
                 # logit_dg = DG(f_imgs)
                 # g_loss = - logit_dg.mean()
