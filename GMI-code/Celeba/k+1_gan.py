@@ -161,7 +161,7 @@ if __name__ == "__main__":
                 mom_unlabel = torch.mean(mom_unlabel, dim = 0)
                 
                 # g_loss = torch.mean((mom_gen - mom_unlabel).abs())  # feature matching loss
-                g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake))))
+                g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake)))
 
                 # logit_dg = DG(f_imgs)
                 # g_loss = - logit_dg.mean()
@@ -180,6 +180,6 @@ if __name__ == "__main__":
             fake_image = G(z)
             save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_result_image_{}.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_celeba_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_celeba_D.tar"))
+        # torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_celeba_G.tar"))
+        # torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_celeba_D.tar"))
 

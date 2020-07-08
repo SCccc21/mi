@@ -100,34 +100,38 @@ if __name__ == "__main__":
 
     
 
-    print("---------------------Test [%s] accuracy------------------------------" % model_name)
-    # train set
-    for i, (imgs, one_hot, iden) in enumerate(train_loader):
-        # iden = iden.view(-1).long().cuda()
-        x = imgs.cuda()
-        iden = iden.cuda()
-        img_size = x.size(2)
-        bs = x.size(0)
-        out = T(x)[-1]
-        # out = E(low2high(x))[-1]
+    # print("---------------------Test [%s] accuracy------------------------------" % model_name)
+    # # train set
+    # for i, (imgs, one_hot, iden) in enumerate(train_loader):
+    #     # iden = iden.view(-1).long().cuda()
+    #     x = imgs.cuda()
+    #     iden = iden.cuda()
+    #     img_size = x.size(2)
+    #     bs = x.size(0)
+    #     # out = T(x)[-1]
+    #     out = E(low2high(x))[-1]
 
-        eval_iden = torch.argmax(out, dim=1).view(-1)
-        train_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
-        loss = criterion(out, iden)
+    #     eval_iden = torch.argmax(out, dim=1).view(-1)
+    #     train_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
+    #     loss = criterion(out, iden)
 
-        print("training acc:", train_acc)
+    #     print("training acc:", train_acc)
 
     # test set
+    total_acc = 0
     for i, (imgs, one_hot, iden) in enumerate(val_loader):
         # iden = iden.view(-1).long().cuda()
         x = imgs.cuda()
         iden = iden.cuda()
         img_size = x.size(2)
         bs = x.size(0)
-        out = T(x)[-1]
-        # out = E(low2high(x))[-1]
+        # out = T(x)[-1]
+        out = E(low2high(x))[-1]
 
         eval_iden = torch.argmax(out, dim=1).view(-1)
         val_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
+        total_acc += val_acc
         loss = criterion(out, iden)
         print("val acc:", val_acc)
+
+    aver_acc = total_acc / (i+1)
