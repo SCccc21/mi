@@ -31,7 +31,7 @@ class ImageFolder(data.Dataset):
         self.image_list = self.load_img()
         self.num_img = len(self.image_list)
         self.n_classes = args["dataset"]["n_classes"]
-        # print("Load " + str(self.num_img) + " images")
+        print("Load " + str(self.num_img) + " images")
 
     
     def get_list(self, file_path):
@@ -52,15 +52,13 @@ class ImageFolder(data.Dataset):
     def load_img(self):
         img_list = []
         for i, img_name in enumerate(self.name_list):
-            # print(img_name)
-            # if img_name.endswith(".png"):
-            name = os.path.splitext(img_name)[0]
-            # print(name)
-            path = self.img_path + "/" + name + ".jpg"
-            img = PIL.Image.open(path)
-            img = img.convert('RGB')
-            img_list.append(img)
+            if img_name.endswith(".png"):
+                path = self.img_path + "/" + img_name
+                img = PIL.Image.open(path)
+                img = img.convert('RGB')
+                img_list.append(img)
         return img_list
+    
     
     def get_processor(self):
         if self.model_name == "FaceNet":
@@ -75,11 +73,24 @@ class ImageFolder(data.Dataset):
         crop = lambda x: x[:, offset_height:offset_height + crop_size, offset_width:offset_width + crop_size]
 
         proc = []
-        proc.append(transforms.ToTensor())
-        proc.append(transforms.Lambda(crop))
-        proc.append(transforms.ToPILImage())
-        proc.append(transforms.Resize((re_size, re_size)))
-        proc.append(transforms.ToTensor())
+        if self.mode == "train":
+            proc.append(transforms.ToTensor())
+            proc.append(transforms.Lambda(crop))
+            proc.append(transforms.ToPILImage())
+            proc.append(transforms.Resize((re_size, re_size)))
+            proc.append(transforms.RandomHorizontalFlip(p=0.5))
+            #proc.append(transforms.Pad(5))
+            #proc.append(transforms.RandomCrop((re_size, re_size)))
+            proc.append(transforms.ToTensor())
+            #proc.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+        else:
+            proc.append(transforms.ToTensor())
+            proc.append(transforms.Lambda(crop))
+            proc.append(transforms.ToPILImage())
+            proc.append(transforms.Resize((re_size, re_size)))
+            proc.append(transforms.ToTensor())
+            #proc.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+        
             
         return transforms.Compose(proc)
 
@@ -91,12 +102,10 @@ class ImageFolder(data.Dataset):
         if self.mode == "gan":
             return img
         label = self.label_list[index]
-        one_hot = np.zeros(self.n_classes)
-        one_hot[label-1] = 1
         # print(label)
         # print('--------')
 
-        return img, one_hot, label-1
+        return img, label
 
     def __len__(self):
         return self.num_img
@@ -152,9 +161,8 @@ class GrayFolder(data.Dataset):
         if self.mode == "gan":
             return img
         label = self.label_list[index]
-        one_hot = np.zeros(self.n_classes)
-        one_hot[label] = 1
-        return img, one_hot, label
+    
+        return img, label
 
     def __len__(self):
         return self.num_img

@@ -59,30 +59,30 @@ if __name__ == "__main__":
         T = VGG16(1000)
         E = FaceNet(1000)
 
-    # T = torch.nn.DataParallel(T).cuda()
-    T= T.cuda()
+    T= torch.nn.DataParallel(T).cuda()
     ckp_T = torch.load(path_T)
     E = torch.nn.DataParallel(E).cuda()
     ckp_E = torch.load(path_E)
 
-    if 0:
-        print("Pre-trained model_latest.pth (ckp_E) state_dict:")
+    if 1:
+        print("Pre-trained (ckp_E) state_dict:")
         n = 0
-        for k,v in ckp_E['state_dict'].items():
+        for k,v in ckp_T['state_dict'].items():
             print ('idx = %d' %n, k, v.shape)
             n += 1
         
         #NOTE: added by CCJ:
         # Print model's state_dict
-        print("\n\nModel VGG16 state_dict:")
+        print("\n\nModel state_dict:")
         n = 0
         for param_tensor in T.state_dict():
             print('idx = ', n, "\t", param_tensor, "\t", T.state_dict()[param_tensor].size())
             n += 1
-            if 'module.' in param_tensor:
-                tmp_k = param_tensor[len('module.'):]
-            else:
-                tmp_k = param_tensor
+            # if 'module.' in param_tensor:
+            #     tmp_k = param_tensor[len('module.'):]
+            # else:
+            #     tmp_k = param_tensor
+            tmp_k = param_tensor
             if tmp_k not in ckp_T['state_dict']:
                 print ("not found:", tmp_k)
 
@@ -125,14 +125,14 @@ if __name__ == "__main__":
         iden = iden.cuda()
         img_size = x.size(2)
         bs = x.size(0)
-        # out = T(x)[-1]
-        out = E(low2high(x))[-1]
+        out = T(x)[-1]
+        # out = E(low2high(x))[-1]
 
         eval_iden = torch.argmax(out, dim=1).view(-1)
         val_acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
         total_acc += val_acc
-        loss = criterion(out, iden)
+        # loss = criterion(out, iden)
         print("val acc:", val_acc)
 
     aver_acc = total_acc / (i+1)
-    print("average val acc:", val_acc)
+    print("average val acc:", aver_acc)

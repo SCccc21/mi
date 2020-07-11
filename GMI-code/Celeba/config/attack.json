@@ -2,7 +2,7 @@
     "dataset":{
         "attack_file_path": "/home/sichen/data/splits_11/identity_private_train.txt",
         "name": "celeba",
-        "img_path": "/home/sichen/data/img_align_celeba",
+        "img_path": "/home/sichen/data/img_align_celeba_png",
         "model_name": "VGG16",
         "n_classes":1000
     },

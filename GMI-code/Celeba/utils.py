@@ -106,7 +106,15 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan", iterator=False):
     
     return data_set, data_loader
 
-def load_params(json_file):
+def load_params(self, model):
+    own_state = self.state_dict()
+    for name, param in model.named_parameters():
+        if name not in own_state:
+            print(name)
+            continue
+        own_state[name].copy_(param.data)
+
+def load_json(json_file):
     with open(json_file) as data_file:
         data = json.load(data_file)
     return data
