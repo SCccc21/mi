@@ -42,7 +42,7 @@ if __name__ == "__main__":
     dataset_name = "celeba"
 
     file = "./config/attack" + ".json"
-    args = load_params(json_file=file)
+    args = load_json(json_file=file)
     logger.info(args)
    
     z_dim = 100
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     # path_D = '/home/sichen/models/GAN/celeba_D.tar'
     path_G = '/home/sichen/models/yuheng/celeba_G.tar'
     path_D = '/home/sichen/models/yuheng/celeba_D.tar'
-    path_T = '/home/sichen/models/yuheng/VGG16.tar'
-    path_E = '/home/sichen/models/yuheng/FaceNet.tar'
+    path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
+    path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_92.42.tar'
     # path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
     # path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
@@ -92,18 +92,12 @@ if __name__ == "__main__":
 
     # with mask
 
-    ###########################################
     ###########     load identity    ##########
-    ###########################################
-    batch_size = 64
-    file_path = args['dataset']['attack_file_path']
-    data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
+    # batch_size = 64
+    # file_path = args['dataset']['attack_file_path']
+    # data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
 
-
-
-    ###########################################
     ############         attack     ###########
-    ###########################################
     logger.info("=> Begin attacking ...")
 
     '''

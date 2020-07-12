@@ -25,8 +25,13 @@ class VGG16(nn.Module):
             
     def forward(self, x):
         feature = self.feature(x)
+        # print(x.shape)
+        # print(feature.shape)
         feature = feature.view(feature.size(0), -1)
+        # print(feature.shape)
         feature = self.bn(feature)
+        # print(feature.shape)
+        # print("---------------")
         res = self.fc_layer(feature)
         
         return [feature, res]
@@ -113,7 +118,7 @@ class FaceNet(nn.Module):
         feat = self.feature(x)
         feat = feat.view(feat.size(0), -1)
         out = self.fc_layer(feat)
-        return [out]
+        return [feat, out]
 
 class FaceNet64(nn.Module):
     def __init__(self, num_classes = 1000):

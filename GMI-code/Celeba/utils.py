@@ -106,6 +106,24 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan", iterator=False):
     
     return data_set, data_loader
 
+def load_pretrain(self, state_dict):
+    own_state = self.state_dict()
+    for name, param in state_dict.items():
+        if name.startswith("module.fc_layer"):
+            continue
+        if name not in own_state:
+            print(name)
+            continue
+        own_state[name].copy_(param.data)
+
+def load_state_dict(self, state_dict):
+    own_state = self.state_dict()
+    for name, param in state_dict.items():
+        if name not in own_state:
+            print(name)
+            continue
+        own_state[name].copy_(param.data)
+
 def load_params(self, model):
     own_state = self.state_dict()
     for name, param in model.named_parameters():

@@ -34,7 +34,7 @@ def main(args, model_name, trainloader, testloader):
         BACKBONE_RESUME_ROOT = "ir50.pth"
         print("Loading Backbone Checkpoint ")
         load_my_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
-        net.fc_layer.apply(model.weight_init)
+        net.fc_layer.apply(net.weight_init)
 
     elif model_name == "IR50":
         if mode == "reg":
@@ -93,8 +93,8 @@ if __name__ == '__main__':
     print("---------------------Training [%s]---------------------" % model_name)
     utils.print_params(args["dataset"], args[model_name], dataset=args['dataset']['name'])
 
-    train_file = args['dataset']['train_file']
-    test_file = args['dataset']['test_file']
+    train_file = args['dataset']['train_file_path']
+    test_file = args['dataset']['test_file_path']
     _, trainloader = utils.init_dataloader(args, train_file, mode="train")
     _, testloader = utils.init_dataloader(args, test_file, mode="test")
 

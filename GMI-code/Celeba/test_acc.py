@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     global args
     file = "./config/classify" + ".json"
-    args = load_params(json_file=file)
+    args = load_json(json_file=file)
 
     model_name = args['dataset']['model_name']
     model_name_T = "VGG16"
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # path_T = '/home/sichen/models/target_model/VGG16/model_latest.pth'
     # path_E = '/home/sichen/models/target_model/FaceNet/model_latest.pth'
-    path_T = '/home/sichen/models/yuheng/VGG16.tar'
+    path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     path_E = '/home/sichen/models/yuheng/FaceNet.tar'
 
     train_path = args['dataset']['train_file_path']
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     E = torch.nn.DataParallel(E).cuda()
     ckp_E = torch.load(path_E)
 
-    if 1:
+    if 0:
         print("Pre-trained (ckp_E) state_dict:")
         n = 0
         for k,v in ckp_T['state_dict'].items():
@@ -90,9 +90,8 @@ if __name__ == "__main__":
     
     E.load_state_dict(ckp_E['state_dict'], strict=False)
 
-    train_set, train_loader = init_dataloader(args, train_path, batch_size, mode="classify")
-    print(train_path)
-    val_set, val_loader = init_dataloader(args, val_path, batch_size, mode="classify")
+    # train_set, train_loader = init_dataloader(args, train_path, batch_size, mode="train")
+    val_set, val_loader = init_dataloader(args, val_path, batch_size, mode="test")
 
     criterion = nn.CrossEntropyLoss().cuda()
     T.eval()
@@ -102,7 +101,7 @@ if __name__ == "__main__":
 
     # print("---------------------Test [%s] accuracy------------------------------" % model_name)
     # # train set
-    # for i, (imgs, one_hot, iden) in enumerate(train_loader):
+    # for i, (imgs, iden) in enumerate(train_loader):
     #     # iden = iden.view(-1).long().cuda()
     #     x = imgs.cuda()
     #     iden = iden.cuda()
@@ -118,9 +117,9 @@ if __name__ == "__main__":
     #     print("training acc:", train_acc)
 
     # test set
+    
     total_acc = 0
-    for i, (imgs, one_hot, iden) in enumerate(val_loader):
-        # iden = iden.view(-1).long().cuda()
+    for i, (imgs, iden) in enumerate(val_loader):
         x = imgs.cuda()
         iden = iden.cuda()
         img_size = x.size(2)

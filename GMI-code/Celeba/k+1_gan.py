@@ -59,7 +59,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
     
     file = "./config/" + dataset_name + ".json"
-    args = load_params(json_file=file)
+    args = load_json(json_file=file)
 
     file_path = args['dataset']['train_file_path']
     model_name = args['dataset']['model_name']

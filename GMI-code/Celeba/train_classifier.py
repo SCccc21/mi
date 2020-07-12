@@ -98,7 +98,7 @@ if __name__ == "__main__":
     logger = get_logger()
     # writer = SummaryWriter('./model_classifier')
     file = "./config/classify" + ".json"
-    args = load_params(json_file=file)
+    args = load_json(json_file=file)
     logger.info(args)
     logger.info("=> creating model ...")
     
