@@ -117,7 +117,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		if max_iden[i].item() == gt:
 			correct += 1
 		# top5
-		_, top5_idx = torch.topk(max_prob[i], 5, dim=1, dir=True)
+		_, top5_idx = torch.topk(max_prob[i], 5)
 		if gt in top5_idx:
 			cnt5 += 1
 	
@@ -216,7 +216,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		if max_iden[i].item() == gt:
 			correct += 1
 		# top5
-		_, top5_idx = torch.topk(max_prob[i], 5, dim=1, dir=True)
+		_, top5_idx = torch.topk(max_prob[i], 5)
 		if gt in top5_idx:
 			cnt5 += 1
 		

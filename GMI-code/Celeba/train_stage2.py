@@ -49,10 +49,10 @@ if __name__ == "__main__":
 
     # path_G = '/home/sichen/models/improvedGAN/improved_celeba_G.tar'
     # path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
-    # path_G = '/home/sichen/models/GAN/celeba_G.tar'
-    # path_D = '/home/sichen/models/GAN/celeba_D.tar'
-    path_G = '/home/sichen/models/yuheng/celeba_G.tar'
-    path_D = '/home/sichen/models/yuheng/celeba_D.tar'
+    path_G = '/home/sichen/models/GAN/celeba_G.tar'
+    path_D = '/home/sichen/models/GAN/celeba_D.tar'
+    # path_G = '/home/sichen/models/yuheng/celeba_G.tar'
+    # path_D = '/home/sichen/models/yuheng/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
     # path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
@@ -126,8 +126,10 @@ if __name__ == "__main__":
         total_acc += acc_list
         total_acc5 += acc5_list
 
-    aver_acc = total_acc / 10
-    aver_acc5 = total_acc5 / 10
-    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+    aver_acc = np.array(total_acc) / 10
+    aver_acc5 = np.array(total_acc5) / 10
+    # print("Average Acc:{:.}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+    print("Average Acc:", aver_acc)
+    print("Average Acc5:", aver_acc5)
 
     
