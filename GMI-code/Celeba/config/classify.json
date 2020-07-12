@@ -1,13 +1,13 @@
 {
     "dataset":{
       "name":"celeba",
-      "train_file":"/home/sichen/data/trainset.txt",
-      "test_file":"/home/sichen/data/testset.txt",
+      "train_file_path":"/home/sichen/data/trainset.txt",
+      "test_file_path":"/home/sichen/data/testset.txt",
       "img_path": "/home/sichen/data/img_align_celeba_png",
-      "model_name":"FaceNet",
+      "model_name":"VGG16",
       "mode":"reg",
       "n_classes":1000,
-      "gpus":"0, 1, 2, 3"
+      "gpus":"4, 5, 6, 7"
     },
     "VGG16":{
       "epochs":50,

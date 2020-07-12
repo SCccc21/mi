@@ -32,8 +32,8 @@ def get_logger():
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     path_G = '/home/sichen/models/yuheng/celeba_G.tar'
     path_D = '/home/sichen/models/yuheng/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
-    path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_92.42.tar'
+    path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
     # path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
     # path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 

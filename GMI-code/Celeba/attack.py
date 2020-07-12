@@ -23,6 +23,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 
 	max_score = torch.zeros(bs)
 	max_iden = torch.zeros(bs)
+	max_prob = torch.zeros(bs, num_classes)
 	z_hat = torch.zeros(bs, 100)
 	flag = torch.zeros(bs)
 
@@ -99,7 +100,9 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
+				max_prob[i] = eval_prob[i]
 				z_hat[i, :] = z[i, :]
+
 			if eval_iden[i].item() == gt:
 				cnt += 1
 				flag[i] = 1
@@ -108,14 +111,19 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
 	correct = 0
+	cnt5 = 0
 	for i in range(bs):
 		gt = iden[i].item()
 		if max_iden[i].item() == gt:
 			correct += 1
+		# top5
+		_, top5_idx = torch.topk(max_prob[i], 5, dim=1, dir=True)
+		if gt in top5_idx:
+			cnt5 += 1
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
-	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
+	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
+	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
 	return acc, acc_5
 
 
@@ -131,6 +139,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 
 	max_score = torch.zeros(bs)
 	max_iden = torch.zeros(bs)
+	max_prob = torch.zeros(bs, num_classes)
 	z_hat = torch.zeros(bs, 100)
 	flag = torch.zeros(bs)
 
@@ -156,8 +165,8 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			if z.grad is not None:
 				z.grad.data.zero_()
 
-			# Prior_Loss = - label.mean()
-			Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
+			Prior_Loss = - label.mean()
+			# Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
 			Iden_Loss = criterion(out, iden)
 			Total_Loss = Prior_Loss + lamda * Iden_Loss
 
@@ -191,6 +200,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
+				max_prob[i] = eval_prob[i]
 				z_hat[i, :] = z[i, :]
 			if eval_iden[i].item() == gt:
 				cnt += 1
@@ -200,16 +210,21 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
 	correct = 0
+	cnt5 = 0
 	for i in range(bs):
 		gt = iden[i].item()
 		if max_iden[i].item() == gt:
 			correct += 1
+		# top5
+		_, top5_idx = torch.topk(max_prob[i], 5, dim=1, dir=True)
+		if gt in top5_idx:
+			cnt5 += 1
+		
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5 = correct * 1.0 / bs, correct_5 * 1.0 / bs  
-	print("Acc:{:.2f}\tAcc5:{:.2f}".format(acc, acc_5))
+	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
+	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
 	return acc, acc_5
-	
 
 if __name__ == '__main__':
 	pass
