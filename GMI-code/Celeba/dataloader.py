@@ -31,7 +31,7 @@ class ImageFolder(data.Dataset):
         self.image_list = self.load_img()
         self.num_img = len(self.image_list)
         self.n_classes = args["dataset"]["n_classes"]
-        print("Load " + str(self.num_img) + " images")
+        # print("Load " + str(self.num_img) + " images")
 
     
     def get_list(self, file_path):
@@ -39,7 +39,7 @@ class ImageFolder(data.Dataset):
         f = open(file_path, "r")
         for line in f.readlines():
             if self.mode == "gan":
-                img_name = line
+                img_name = line.strip()
             else:
                 img_name, iden = line.strip().split(' ')
                 label_list.append(int(iden))

@@ -78,7 +78,7 @@ def main(args, model_name, trainloader, testloader):
     elif mode == "vib":
         best_model, best_acc = engine.train_vib(args, net, criterion, optimizer, trainloader, testloader, n_epochs)
 	
-    torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "{}_{:.2f}.tar").format(model_name, best_acc))
+    # torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "{}_{:.2f}.tar").format(model_name, best_acc))
 
 if __name__ == '__main__':
     file = "./config/classify.json"

@@ -14,6 +14,9 @@ import torch.nn.functional as F
 from discri import DGWGAN, Discriminator, MinibatchDiscriminator
 from generator import Generator
 from classify import *
+from tensorboardX import SummaryWriter
+from datetime import datetime
+TIMESTAMP = "{0:%Y-%m-%dT%H-%M-%S/}".format(datetime.now())
 
 def freeze(net):
     for p in net.parameters():
@@ -48,7 +51,7 @@ os.makedirs(save_img_dir, exist_ok=True)
 
 dataset_name = "celeba"
 
-log_path = "./attack_logs"
+log_path = "./attack_logs" + TIMESTAMP
 os.makedirs(log_path, exist_ok=True)
 log_file = "GAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
@@ -57,9 +60,11 @@ utils.Tee(os.path.join(log_path, log_file), 'w')
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    global args, writer
     
     file = "./config/" + dataset_name + ".json"
     args = load_json(json_file=file)
+    writer = SummaryWriter(log_path)
 
     file_path = args['dataset']['train_file_path']
     model_name = args['dataset']['model_name']
@@ -71,7 +76,7 @@ if __name__ == "__main__":
     unlabel_weight = args[model_name]['unlabel_weight']
 
     model_name_T = "VGG16"
-    path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
+    path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
 
     if model_name_T.startswith("VGG16"):
         T = VGG16(1000)
@@ -87,7 +92,7 @@ if __name__ == "__main__":
     print("---------------------Training [%s]------------------------------" % model_name)
     utils.print_params(args["dataset"], args[model_name])
 
-    dataset, dataloader = init_dataloader(args, file_path, batch_size, mode="gan")
+    dataset, dataloader = utils.init_dataloader(args, file_path, batch_size, mode="gan")
 
     G = Generator(z_dim)
     # DG = Discriminator(3, 64, 1000)
@@ -109,6 +114,7 @@ if __name__ == "__main__":
         _, unlabel_loader2 = init_dataloader(args, file_path, batch_size, mode="gan", iterator=True)
 
         for i, imgs in enumerate(dataloader):
+            current_iter = epoch * len(dataloader) + i + 1
 
             step += 1
             imgs = imgs.cuda()
@@ -116,7 +122,7 @@ if __name__ == "__main__":
             # if bs < 64:
             #     continue
             x_unlabel = unlabel_loader1.next()
-            unlabel2 = unlabel_loader2.next()
+            x_unlabel2 = unlabel_loader2.next()
             
             freeze(G)
             unfreeze(DG)
@@ -131,10 +137,10 @@ if __name__ == "__main__":
             _, output_label = DG(imgs)
             _, output_unlabel = DG(x_unlabel)
             _, output_fake =  DG(f_imgs)
-            # import pdb; pdb.set_trace()
 
             loss_lab = criterion(output_label, y)
-            # loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1)))
+            # loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1))) # same as crossEntropy loss
+            # import pdb; pdb.set_trace()
             loss_unlab = 0.5*(torch.mean(F.softplus(log_sum_exp(output_unlabel)))-torch.mean(log_sum_exp(output_unlabel))+torch.mean(F.softplus(log_sum_exp(output_fake))))
             dg_loss = loss_lab + loss_unlab
             
@@ -148,6 +154,11 @@ if __name__ == "__main__":
             dg_loss.backward()
             dg_optimizer.step()
 
+            writer.add_scalar('loss_label_batch', loss_lab, current_iter)
+            writer.add_scalar('loss_unlabel_batch', loss_unlab, current_iter)
+            writer.add_scalar('DG_loss_batch', dg_loss, current_iter)
+            writer.add_scalar('Acc_batch', acc, current_iter)
+
             # train G
 
             if step % n_critic == 0:
@@ -156,13 +167,13 @@ if __name__ == "__main__":
                 z = torch.randn(bs, z_dim).cuda()
                 f_imgs = G(z)
                 mom_gen, output_fake = DG(f_imgs)
-                mom_unlabel, _ = DG(unlabel2)
+                mom_unlabel, _ = DG(x_unlabel2)
 
                 mom_gen = torch.mean(mom_gen, dim = 0)
                 mom_unlabel = torch.mean(mom_unlabel, dim = 0)
                 
-                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())  # feature matching loss
-                g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake)))
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs())  # feature matching loss
+                # g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake)))
 
                 # logit_dg = DG(f_imgs)
                 # g_loss = - logit_dg.mean()
@@ -172,18 +183,22 @@ if __name__ == "__main__":
                 g_loss.backward()
                 g_optimizer.step()
 
+                writer.add_scalar('G_loss', g_loss, current_iter)
+
         end = time.time()
         interval = end - start
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_0714.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_0714.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_result_image_{}.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_result_image_{}_0714.png".format(epoch)), nrow = 8)
+            for b in range(fake_image.size(0)):
+                writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(
             #     os.path.join(save_model_dir, "improved_mb_celeba_G.tar"),
             #     save_model_dir + '/improved_mb_G_train_epoch_' + str(epoch) + '.tar')

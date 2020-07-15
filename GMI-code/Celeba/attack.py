@@ -42,6 +42,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		for i in range(iter_times):
 			fake = G(z)
 			label = D(fake)
+			# _, label = D(fake)
 			out = T(fake)[-1]
 			
 			if z.grad is not None:
@@ -157,8 +158,8 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			
 		for i in range(iter_times):
 			fake = G(z)
-			# label = D(fake)
-			_, label =  D(fake)
+			label = D(fake)
+			# _, label =  D(fake)
 			out = T(fake)[-1]
 			
 			
@@ -168,7 +169,8 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			Prior_Loss = - label.mean()
 			# Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
 			Iden_Loss = criterion(out, iden)
-			Total_Loss = Prior_Loss + lamda * Iden_Loss
+			# Total_Loss = Prior_Loss + lamda * Iden_Loss
+			Total_Loss = lamda * Iden_Loss
 
 			Total_Loss.backward()
 			

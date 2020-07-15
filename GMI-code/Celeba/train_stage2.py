@@ -32,8 +32,8 @@ def get_logger():
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -51,12 +51,8 @@ if __name__ == "__main__":
     # path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
     path_G = '/home/sichen/models/GAN/celeba_G.tar'
     path_D = '/home/sichen/models/GAN/celeba_D.tar'
-    # path_G = '/home/sichen/models/yuheng/celeba_G.tar'
-    # path_D = '/home/sichen/models/yuheng/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
-    # path_T = '/home/sichen/models/target_model/' + model_name_T + '/model_best.pth'
-    # path_E = '/home/sichen/models/target_model/' + model_name_E + '/model_best.pth'
 
     ###########################################
     ###########     load model       ##########
@@ -64,8 +60,8 @@ if __name__ == "__main__":
     # no mask
     G = Generator(z_dim)
     G = torch.nn.DataParallel(G).cuda()
-    # D = DGWGAN(3)
-    D = Discriminator(3, 64, 1000)
+    D = DGWGAN(3)
+    # D = Discriminator(3, 64, 1000)
     D = torch.nn.DataParallel(D).cuda()
     ckp_G = torch.load(path_G)
     G.load_state_dict(ckp_G['state_dict'], strict=False)
@@ -108,28 +104,21 @@ if __name__ == "__main__":
         # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     '''
 
-    total_acc, total_acc5 = [0]*5, [0]*5
+    total_acc, total_acc5 = 0, 0
     # no auxilary
-    for i in range(10):
-        acc_list = []
-        acc5_list = []
+    for i in range(5):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=100, iter_times=1500, clip_range=1)
+            # acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+            acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=20, iter_times=1500, clip_range=1)
             iden = iden + 60
-            acc_list.append(acc)
-            acc5_list.append(acc5)
+            total_acc += acc
+            total_acc5 += acc5
 
-        total_acc += acc_list
-        total_acc5 += acc5_list
-
-    aver_acc = np.array(total_acc) / 10
-    aver_acc5 = np.array(total_acc5) / 10
-    # print("Average Acc:{:.}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
-    print("Average Acc:", aver_acc)
-    print("Average Acc5:", aver_acc5)
+    aver_acc = total_acc / 25
+    aver_acc5 = total_acc5 / 25
+    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
 
     

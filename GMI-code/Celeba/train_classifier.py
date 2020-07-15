@@ -145,7 +145,7 @@ if __name__ == "__main__":
         loss_meter = None
         end = time.time()
         model.train()
-        
+        acc, cnt = 0, 0
         # training  
         for i, (imgs, one_hot, label) in enumerate(train_loader):
             
@@ -160,12 +160,16 @@ if __name__ == "__main__":
             bs = x.size(0)
 
             out = model.module.predict(x)
+            out_iden = torch.argmax(out, dim=1).view(-1)
             
             loss = criterion(out, label)
             # import pdb; pdb.set_trace()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            acc += torch.sum(label == out_iden).item()
+            cnt += bs
            
             loss_meter = AverageMeter()
             loss_meter.update(loss.detach().cpu().numpy(), bs)
@@ -197,6 +201,7 @@ if __name__ == "__main__":
         is_best = False
         
         # evalutate
+        train_acc = acc * 100 /cnt
         loss_val = validate(val_loader, model, criterion)
         is_best = loss_val < best_loss_all
         best_loss_all = min(loss_val, best_loss_all)

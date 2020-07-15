@@ -90,23 +90,12 @@ class Discriminator(nn.Module):
         self.fc_layer = nn.Linear(dim*4*4*4, self.n_classes)
 
     def forward(self, x):
-        out = []
         bs = x.shape[0]
-        # print("input:", x.shape)
         feat1 = self.layer1(x)
-        # print('feat1:',feat1.shape)
-        out.append(feat1)
         feat2 = self.layer2(feat1)
-        # print('feat2:', feat2.shape)
-        out.append(feat2)
         feat3 = self.layer3(feat2)
-        # print('feat3:', feat3.shape)
-        out.append(feat3)
         feat4 = self.layer4(feat3)
-        # print('feat4:', feat4.shape)
-        out.append(feat4)
         feat = feat4.view(bs, -1)
-        # print('feat:', feat.shape)
         y = self.fc_layer(feat)
         
         return feat, y
