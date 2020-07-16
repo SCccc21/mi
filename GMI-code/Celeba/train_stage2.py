@@ -16,6 +16,7 @@ import os, logging
 import numpy as np
 from attack import inversion, inversion_grad_constraint
 from generator import Generator
+from sklearn.model_selection import GridSearchCV
 
 
 #logger
@@ -32,8 +33,8 @@ def get_logger():
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -47,10 +48,10 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    # path_G = '/home/sichen/models/improvedGAN/improved_celeba_G.tar'
-    # path_D = '/home/sichen/models/improvedGAN/improved_celeba_D.tar'
-    path_G = '/home/sichen/models/GAN/celeba_G.tar'
-    path_D = '/home/sichen/models/GAN/celeba_D.tar'
+    path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0714.tar'
+    path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0714.tar'
+    # path_G = '/home/sichen/models/GAN/celeba_G.tar'
+    # path_D = '/home/sichen/models/GAN/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 
@@ -60,8 +61,9 @@ if __name__ == "__main__":
     # no mask
     G = Generator(z_dim)
     G = torch.nn.DataParallel(G).cuda()
-    D = DGWGAN(3)
+    # D = DGWGAN(3)
     # D = Discriminator(3, 64, 1000)
+    D = MinibatchDiscriminator()
     D = torch.nn.DataParallel(D).cuda()
     ckp_G = torch.load(path_G)
     G.load_state_dict(ckp_G['state_dict'], strict=False)
@@ -104,6 +106,8 @@ if __name__ == "__main__":
         # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
     '''
 
+    
+
     total_acc, total_acc5 = 0, 0
     # no auxilary
     for i in range(5):
@@ -111,8 +115,8 @@ if __name__ == "__main__":
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            # acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-            acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=20, iter_times=1500, clip_range=1)
+            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
+            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=5, iter_times=1500, clip_range=1)
             iden = iden + 60
             total_acc += acc
             total_acc5 += acc5

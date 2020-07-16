@@ -381,3 +381,9 @@ def calc_knn(feat, iden, path="feature"):
 def log_sum_exp(x, axis = 1):
     m = torch.max(x, dim = 1)[0]
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(1)), dim = axis))
+
+# define "soft" cross-entropy with pytorch tensor operations
+def softXEnt (input, target):
+    targetprobs = nn.functional.softmax (target, dim = 1)
+    logprobs = nn.functional.log_softmax (input, dim = 1)
+    return  -(targetprobs * logprobs).sum() / input.shape[0]

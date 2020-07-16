@@ -59,7 +59,7 @@ utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
     global args, writer
     
     file = "./config/" + dataset_name + ".json"
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     dg_optimizer = torch.optim.Adam(DG.parameters(), lr=lr, betas=(0.5, 0.999))
     g_optimizer = torch.optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
-    criterion = nn.CrossEntropyLoss().cuda()
+    # criterion = nn.CrossEntropyLoss().cuda()
     
 
     step = 0
@@ -119,8 +119,6 @@ if __name__ == "__main__":
             step += 1
             imgs = imgs.cuda()
             bs = imgs.size(0)
-            # if bs < 64:
-            #     continue
             x_unlabel = unlabel_loader1.next()
             x_unlabel2 = unlabel_loader2.next()
             
@@ -138,7 +136,8 @@ if __name__ == "__main__":
             _, output_unlabel = DG(x_unlabel)
             _, output_fake =  DG(f_imgs)
 
-            loss_lab = criterion(output_label, y)
+            # loss_lab = criterion(output_label, y_prob)
+            loss_lab = softXEnt(output_label, y_prob)
             # loss_lab = torch.mean(torch.mean(log_sum_exp(output_label)))-torch.mean(torch.gather(output_label, 1, y.unsqueeze(1))) # same as crossEntropy loss
             # import pdb; pdb.set_trace()
             loss_unlab = 0.5*(torch.mean(F.softplus(log_sum_exp(output_unlabel)))-torch.mean(log_sum_exp(output_unlabel))+torch.mean(F.softplus(log_sum_exp(output_fake))))
@@ -183,20 +182,20 @@ if __name__ == "__main__":
                 g_loss.backward()
                 g_optimizer.step()
 
-                writer.add_scalar('G_loss', g_loss, current_iter)
+                writer.add_scalar('G_loss_batch', g_loss, current_iter)
 
         end = time.time()
         interval = end - start
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_0714.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_0714.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_0715.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_0715.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_result_image_{}_0714.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_result_image_{}_0715.png".format(epoch)), nrow = 8)
             for b in range(fake_image.size(0)):
                 writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(
