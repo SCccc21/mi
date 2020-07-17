@@ -30,11 +30,30 @@ def get_logger():
     logger.addHandler(handler)
     return logger
 
+def get_acc(G, D, T, E, lamda, lamda1, lamda2):
+    total_acc, total_acc5 = 0, 0
+    # no auxilary
+    for i in range(3):
+        iden = torch.from_numpy(np.arange(60))
+
+        for idx in range(5):
+            print("--------------------- Attack batch [%s]------------------------------" % idx)
+            acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=lamda, lamda1=lamda1, lamda2=lamda2, iter_times=1500, clip_range=1, improved=False)
+            iden = iden + 60
+            total_acc += acc
+            total_acc5 += acc5
+
+    aver_acc = total_acc / 15
+    aver_acc5 = total_acc5 / 15
+    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+    
+    return aver_acc, aver_acc5
+
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -50,8 +69,6 @@ if __name__ == "__main__":
    
     z_dim = 100
 
-    # path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0715.tar'
-    # path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0715.tar'
     path_G = '/home/sichen/models/GAN/celeba_G.tar'
     path_D = '/home/sichen/models/GAN/celeba_D.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
@@ -92,41 +109,58 @@ if __name__ == "__main__":
     ckp_E = torch.load(path_E)
     E.load_state_dict(ckp_E['state_dict'], strict=False)
 
-    # with mask
+    
+    ################ param search #############
 
-    ###########     load identity    ##########
-    # batch_size = 64
-    # file_path = args['dataset']['attack_file_path']
-    # data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
+    dict_acc = {}
+    dict_acc5 = {}
+    best_acc, best_acc5 = 0, 0
+    
 
-    ############         attack     ###########
-    logger.info("=> Begin attacking ...")
+    lamda_list = [10, 50, 100, 150, 200, 500] # iden loss
+    lamda1_list = [0.1, 1] # prior loss
+    lamda2_list = [0.1, 1, 10, 50, 100, 500] # grad loss
 
-    '''
-    # mask
-    for idx, (imgs, one_hot, iden) in enumerate(data_loader):
-        print("--------------------- Attack batch [%s]------------------------------" % idx)
-        inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-        # inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1)
-    '''
+    
+    for lamda1 in lamda1_list:
+        for lamda in lamda_list:
+            for lamda2 in lamda2_list:
+
+                aver_acc, aver_acc5 = get_acc(G, D, T, E, lamda, lamda1, lamda2)
+                
+                params = 'lamda1=' + str(lamda1) + ' lamda=' + str(lamda) + ' lamda2=' + str(lamda2)
+                print(params)
+                
+                dict_acc[params] = aver_acc
+                dict_acc5[params] = aver_acc5
+
+                if aver_acc > best_acc:
+                    best_acc = aver_acc
+                    best_params = params
+                if aver_acc5 > best_acc5:
+                    best_acc5 = aver_acc5
+                    best_params_5 = params
+
+    # print(dict_acc)
+
+    filename = open('./gc_search_result_acc.txt','w')#dict转txt
+    for k,v in dict_acc.items():
+        filename.write(k+':\t'+str(v))
+        filename.write('\n')
+    filename.close()
+
+    filename = open('./gc_search_result_acc5.txt','w')#dict转txt
+    for k,v in dict_acc5.items():
+        filename.write(k+':\t'+str(v))
+        filename.write('\n')
+    filename.close()
+
+    print("Best acc: " + str(best_acc) + "\tparams are: " + best_params)
+    print("Best acc5: " + str(best_acc5) + "\tparams are: " + best_params_5)
+
+    
 
 
-
-    total_acc, total_acc5 = 0, 0
-    # no auxilary
-    for i in range(5):
-        iden = torch.from_numpy(np.arange(60))
-
-        for idx in range(5):
-            print("--------------------- Attack batch [%s]------------------------------" % idx)
-            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1)
-            iden = iden + 60
-            total_acc += acc
-            total_acc5 += acc5
-
-    aver_acc = total_acc / 25
-    aver_acc5 = total_acc5 / 25
-    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+    
 
     

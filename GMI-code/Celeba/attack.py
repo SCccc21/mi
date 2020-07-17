@@ -3,17 +3,17 @@ import numpy as np
 import torch.nn as nn
 import torchvision.utils as tvls
 import torch.nn.functional as F
-from utils import log_sum_exp
+from utils import log_sum_exp, save_tensor_images
 
 device = "cuda"
 num_classes = 1000
 log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
-save_img_dir = './attack_result_imgs'
+save_img_dir = './attack_result_imgs_gc_test_10'
 os.makedirs(save_img_dir, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1):
+def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda1=1, lamda2=10, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -45,7 +45,6 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		for i in range(iter_times):
 			fake = G(z)
 			label = D(fake)
-			# _, label = D(fake)
 			out = T(fake)[-1]
 			
 			if z.grad is not None:
@@ -69,7 +68,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			# import pdb; pdb.set_trace()
 			Grad_Loss = Grad_Loss.mean().abs()
 
-			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
+			Total_Loss = lamda1 * Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
 
 			if z.grad is not None:
 				z.grad.data.zero_()
@@ -97,7 +96,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 		score = T(fake)[-1]
 		eval_prob = E(utils.low2high(fake))[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
-		save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_0715.png".format(iden[0], r_idx)), nrow = 8)
+		# save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_0715.png".format(iden[0], r_idx)), nrow = 10)
 		
 		cnt = 0
 		for i in range(bs):
@@ -132,7 +131,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 	return acc, acc_5
 
 
-def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1):
+def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -150,6 +149,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 
 	for random_seed in range(5):
 		tf = time.time()
+		r_idx = random_seed
 		
 		torch.manual_seed(random_seed) 
 		torch.cuda.manual_seed(random_seed) 
@@ -162,16 +162,21 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			
 		for i in range(iter_times):
 			fake = G(z)
-			# label = D(fake)
-			_, label =  D(fake)
+			if improved == True:
+				_, label =  D(fake)
+			else:
+				label = D(fake)
+			
 			out = T(fake)[-1]
 			
 			
 			if z.grad is not None:
 				z.grad.data.zero_()
 
-			# Prior_Loss = - label.mean()
-			Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
+			if improved:
+				Prior_Loss = - torch.mean(F.softplus(log_sum_exp(label)))
+			else:
+				Prior_Loss = - label.mean()
 			Iden_Loss = criterion(out, iden)
 			Total_Loss = Prior_Loss + lamda * Iden_Loss
 			# Total_Loss = lamda * Iden_Loss
@@ -199,7 +204,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		score = T(fake)[-1]
 		eval_prob = E(utils.low2high(fake))[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
-		save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_0715.png".format(iden[0], r_idx)), nrow = 8)
+		save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_0715.png".format(iden[0], r_idx)), nrow = 10)
 		
 		cnt = 0
 		for i in range(bs):
