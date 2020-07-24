@@ -31,11 +31,22 @@ def get_logger():
     logger.addHandler(handler)
     return logger
 
+def cal_mean(least_seed_need):
+    bs = least_seed_need.shape[0]
+    fail = 0
+    num = 0
+    for b in range(bs):
+        if least_seed_need[b] == 1001:
+            fail += 1
+            continue
+        num += least_seed_need[b]
+
+    return num / (bs - fail), fail
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
     global args, logger
     logger = get_logger()
@@ -118,6 +129,7 @@ if __name__ == "__main__":
 
     total_acc, total_acc5 = 0, 0
     num_seed = 0
+    num_fail = 0
     # no auxilary
     for i in range(1):
         iden = torch.from_numpy(np.arange(60))
@@ -127,10 +139,18 @@ if __name__ == "__main__":
             least_seed_need = inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1000, iter_times=1500, clip_range=1, improved=improved_flag)
             # least_seed_need = inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=15, iter_times=1500, clip_range=1)
             print("least_seed_need of batch %s \n" % idx, least_seed_need)
-            num_seed += least_seed_need.mean()
+            mean_seed, fail = cal_mean(least_seed_need)
+            num_seed += mean_seed
+            num_fail += fail
+            print("average number of seeds is:", mean_seed)
+            print("number of failure is:", fail)
             iden += 60
 
-    num_seed /= 5    
+    num_seed /= 5   
+    num_fail /= 5 
+
+    logger.info("=> Attack finished.")
     print("average number of seeds need is:", num_seed)
+    print("average number of failure is:", num_fail)
 
     

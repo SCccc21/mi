@@ -30,21 +30,21 @@ def get_logger():
     logger.addHandler(handler)
     return logger
 
-def get_acc(G, D, T, E, lamda, lamda2):
+def get_acc(G, D, T, E, lamda):
     total_acc, total_acc5 = 0, 0
     # no auxilary
-    for i in range(3):
+    for i in range(1):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=lamda, lamda2=lamda2, iter_times=1500, clip_range=1, improved=False)
+            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=lamda, iter_times=1500, clip_range=1, improved=improved_flag)
             iden = iden + 60
             total_acc += acc
             total_acc5 += acc5
 
-    aver_acc = total_acc / 15
-    aver_acc5 = total_acc5 / 15
+    aver_acc = total_acc / 5
+    aver_acc5 = total_acc5 / 5
     print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
     
     return aver_acc, aver_acc5
@@ -115,43 +115,36 @@ if __name__ == "__main__":
     dict_acc = {}
     dict_acc5 = {}
     best_acc, best_acc5 = 0, 0
-    
 
-    # lamda_list = [10, 50, 100, 150, 200, 500] # iden loss
-    # lamda1_list = [0.1, 1] # prior loss
-    # lamda2_list = [1, 10, 50, 100, 500] # grad loss
-
-    lamda_list = [100] # iden loss
-    lamda2_list = [50, 100, 200, 500] # grad loss
+    lamda_list = [50, 100, 500, 1000] # iden loss
 
     
     for lamda in lamda_list:
-        for lamda2 in lamda2_list:
 
-            aver_acc, aver_acc5 = get_acc(G, D, T, E, lamda, lamda2)
-            
-            params = 'lamda1=' + str(0.1) + ' lamda=' + str(lamda) + ' lamda2=' + str(lamda2)
-            print(params)
-            
-            dict_acc[params] = aver_acc
-            dict_acc5[params] = aver_acc5
+        aver_acc, aver_acc5 = get_acc(G, D, T, E, lamda)
+        
+        params = 'lamda1=' + str(0.1) + ' lamda=' + str(lamda)
+        print(params)
+        
+        dict_acc[params] = aver_acc
+        dict_acc5[params] = aver_acc5
 
-            if aver_acc > best_acc:
-                best_acc = aver_acc
-                best_params = params
-            if aver_acc5 > best_acc5:
-                best_acc5 = aver_acc5
-                best_params_5 = params
+        if aver_acc > best_acc:
+            best_acc = aver_acc
+            best_params = params
+        if aver_acc5 > best_acc5:
+            best_acc5 = aver_acc5
+            best_params_5 = params
 
     # print(dict_acc)
 
-    filename = open('./gc_search_result_acc.txt','w')#dict转txt
+    filename = open('./origin_search_result_acc.txt','w')#dict转txt
     for k,v in dict_acc.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')
     filename.close()
 
-    filename = open('./gc_search_result_acc5.txt','w')#dict转txt
+    filename = open('./origin_search_result_acc5.txt','w')#dict转txt
     for k,v in dict_acc5.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')
