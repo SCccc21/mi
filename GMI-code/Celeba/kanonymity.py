@@ -7,10 +7,6 @@ from utils import log_sum_exp, save_tensor_images
 
 device = "cuda"
 num_classes = 1000
-log_path = "../attack_logs"
-os.makedirs(log_path, exist_ok=True)
-save_img_dir = './attack_result_imgs_improved'
-os.makedirs(save_img_dir, exist_ok=True)
 
 # generator, discriminator, target model,
 def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda1=1, lamda2=10, iter_times=1500, clip_range=1, improved=False):
@@ -97,7 +93,6 @@ def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1
 		score = T(fake)[-1]
 		eval_prob = E(utils.low2high(fake))[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
-		# save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_0715.png".format(iden[0], r_idx)), nrow = 10)
 		
 		cnt = 0
 		for i in range(bs):
