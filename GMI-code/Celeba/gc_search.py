@@ -52,8 +52,8 @@ def get_acc(G, D, T, E, lamda, lamda1, lamda2):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5'
 
     global args, logger
     logger = get_logger()
@@ -117,9 +117,13 @@ if __name__ == "__main__":
     best_acc, best_acc5 = 0, 0
     
 
-    lamda_list = [10, 50, 100, 150, 200, 500] # iden loss
-    lamda1_list = [0.1, 1] # prior loss
-    lamda2_list = [0.1, 1, 10, 50, 100, 500] # grad loss
+    # lamda_list = [10, 50, 100, 150, 200, 500] # iden loss
+    # lamda1_list = [0.1, 1] # prior loss
+    # lamda2_list = [1, 10, 50, 100, 500] # grad loss
+
+    lamda_list = [100] # iden loss
+    lamda1_list = [1] # prior loss
+    lamda2_list = [50, 100, 200, 500] # grad loss
 
     
     for lamda1 in lamda1_list:
@@ -143,13 +147,13 @@ if __name__ == "__main__":
 
     # print(dict_acc)
 
-    filename = open('./gc_search_result_acc.txt','w')#dict转txt
+    filename = open('./gc_search_result_acc_1param.txt','w')#dict转txt
     for k,v in dict_acc.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')
     filename.close()
 
-    filename = open('./gc_search_result_acc5.txt','w')#dict转txt
+    filename = open('./gc_search_result_acc5_1param.txt','w')#dict转txt
     for k,v in dict_acc5.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')

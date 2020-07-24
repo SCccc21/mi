@@ -15,6 +15,7 @@ import random
 import os, logging
 import numpy as np
 from attack import inversion, inversion_grad_constraint
+from kanonymity import inversion_k, inversion_grad_constraint_k
 from generator import Generator
 from sklearn.model_selection import GridSearchCV
 
@@ -116,20 +117,20 @@ if __name__ == "__main__":
 
 
     total_acc, total_acc5 = 0, 0
+    num_seed = 0
     # no auxilary
-    for i in range(5):
+    for i in range(1):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1000, iter_times=1500, clip_range=1, improved=improved_flag)
-            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=15, iter_times=1500, clip_range=1)
-            iden = iden + 60
-            total_acc += acc
-            total_acc5 += acc5
+            least_seed_need = inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1000, iter_times=1500, clip_range=1, improved=improved_flag)
+            # least_seed_need = inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=15, iter_times=1500, clip_range=1)
+            print("least_seed_need of batch %s \n" % idx, least_seed_need)
+            num_seed += least_seed_need.mean()
+            iden += 60
 
-    aver_acc = total_acc / 25
-    aver_acc5 = total_acc5 / 25
-    print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
+    num_seed /= 5    
+    print("average number of seeds need is:", num_seed)
 
     

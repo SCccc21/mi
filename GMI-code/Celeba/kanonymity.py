@@ -9,11 +9,11 @@ device = "cuda"
 num_classes = 1000
 log_path = "../attack_logs"
 os.makedirs(log_path, exist_ok=True)
-save_img_dir = './attack_result_imgs_origin_lowprior'
+save_img_dir = './attack_result_imgs_improved'
 os.makedirs(save_img_dir, exist_ok=True)
 
 # generator, discriminator, target model,
-def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda1=1, lamda2=10, iter_times=1500, clip_range=1, improved=False):
+def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda1=1, lamda2=10, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -28,6 +28,7 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 	max_prob = torch.zeros(bs, num_classes)
 	z_hat = torch.zeros(bs, 100)
 	flag = torch.zeros(bs)
+	least_seed_need = torch.ones(bs) * 1000
 
 	for random_seed in range(5):
 		tf = time.time()
@@ -110,28 +111,36 @@ def inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100
 			if eval_iden[i].item() == gt:
 				cnt += 1
 				flag[i] = 1
+				if r_idx < least_seed_need[i]:
+					least_seed_need[i] = r_idx
 		
 		interval = time.time() - tf
 		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
-	correct = 0
-	cnt5 = 0
-	for i in range(bs):
-		gt = iden[i].item()
-		if max_iden[i].item() == gt:
-			correct += 1
-		# top5
-		_, top5_idx = torch.topk(max_prob[i], 5)
-		if gt in top5_idx:
-			cnt5 += 1
+		correct = torch.sum(flag) * 1.0 / bs
+		if correct == 1:
+			return least_seed_need
+
+	return least_seed_need
+
+	# correct = 0
+	# cnt5 = 0
+	# for i in range(bs):
+	# 	gt = iden[i].item()
+	# 	if max_iden[i].item() == gt:
+	# 		correct += 1
+	# 	# top5
+	# 	_, top5_idx = torch.topk(max_prob[i], 5)
+	# 	if gt in top5_idx:
+	# 		cnt5 += 1
 	
-	correct_5 = torch.sum(flag)
-	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
-	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
-	return acc, acc_5
+	# correct_5 = torch.sum(flag)
+	# acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
+	# print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
+	# return acc, acc_5
 
 
-def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
+def inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -146,8 +155,9 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 	max_prob = torch.zeros(bs, num_classes)
 	z_hat = torch.zeros(bs, 100)
 	flag = torch.zeros(bs)
+	least_seed_need = torch.ones(bs) * 1000
 
-	for random_seed in range(5):
+	for random_seed in range(10):
 		tf = time.time()
 		r_idx = random_seed
 		
@@ -203,7 +213,6 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		score = T(fake)[-1]
 		eval_prob = E(utils.low2high(fake))[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
-		save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_improved.png".format(iden[0], r_idx)), nrow = 10)
 		
 		cnt = 0
 		for i in range(bs):
@@ -216,26 +225,34 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 			if eval_iden[i].item() == gt:
 				cnt += 1
 				flag[i] = 1
+				if r_idx < least_seed_need[i]:
+					least_seed_need[i] = r_idx
 		
 		interval = time.time() - tf
 		print("Time:{:.2f}\tAcc:{:.2f}\t".format(interval, cnt * 1.0 / bs))
 
-	correct = 0
-	cnt5 = 0
-	for i in range(bs):
-		gt = iden[i].item()
-		if max_iden[i].item() == gt:
-			correct += 1
-		# top5
-		_, top5_idx = torch.topk(max_prob[i], 5)
-		if gt in top5_idx:
-			cnt5 += 1
+		correct = torch.sum(flag) * 1.0 / bs
+		if correct == 1:
+			return least_seed_need
+
+	return least_seed_need	
+
+	# correct = 0
+	# cnt5 = 0
+	# for i in range(bs):
+	# 	gt = iden[i].item()
+	# 	if max_iden[i].item() == gt:
+	# 		correct += 1
+	# 	# top5
+	# 	_, top5_idx = torch.topk(max_prob[i], 5)
+	# 	if gt in top5_idx:
+	# 		cnt5 += 1
 		
 	
-	correct_5 = torch.sum(flag)
-	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
-	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
-	return acc, acc_5
+	# correct_5 = torch.sum(flag)
+	# acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
+	# print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
+	# return acc, acc_5
 
 if __name__ == '__main__':
 	pass
