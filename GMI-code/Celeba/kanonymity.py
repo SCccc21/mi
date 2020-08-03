@@ -9,7 +9,7 @@ device = "cuda"
 num_classes = 1000
 
 # generator, discriminator, target model,
-def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda1=1, lamda2=10, iter_times=1500, clip_range=1, improved=False):
+def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -19,14 +19,11 @@ def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1
 	T.eval()
 	E.eval()
 
-	max_score = torch.zeros(bs)
-	max_iden = torch.zeros(bs)
-	max_prob = torch.zeros(bs, num_classes)
 	z_hat = torch.zeros(bs, 100)
 	flag = torch.zeros(bs)
 	least_seed_need = torch.ones(bs).int() * 1000
 
-	for random_seed in range(25):
+	for random_seed in range(30):
 		tf = time.time()
 		r_idx = random_seed
 		
@@ -65,7 +62,7 @@ def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1
 			# import pdb; pdb.set_trace()
 			Grad_Loss = Grad_Loss.mean().abs()
 
-			Total_Loss = lamda1 * Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
+			Total_Loss = Prior_Loss + lamda * Iden_Loss + lamda2 * Grad_Loss
 
 			if z.grad is not None:
 				z.grad.data.zero_()
@@ -97,11 +94,6 @@ def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1
 		cnt = 0
 		for i in range(bs):
 			gt = iden[i].item()
-			if score[i, gt].item() > max_score[i].item():
-				max_score[i] = score[i, gt]
-				max_iden[i] = eval_iden[i]
-				max_prob[i] = eval_prob[i]
-				z_hat[i, :] = z[i, :]
  
 			if eval_iden[i].item() == gt:
 				cnt += 1
@@ -115,24 +107,11 @@ def inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1
 		flag_sum = torch.sum(flag) * 1.0 / bs
 		if flag_sum == 1:
 			return least_seed_need + 1
+		
+		torch.cuda.empty_cache()
 
 	return least_seed_need + 1
 
-	# correct = 0
-	# cnt5 = 0
-	# for i in range(bs):
-	# 	gt = iden[i].item()
-	# 	if max_iden[i].item() == gt:
-	# 		correct += 1
-	# 	# top5
-	# 	_, top5_idx = torch.topk(max_prob[i], 5)
-	# 	if gt in top5_idx:
-	# 		cnt5 += 1
-	
-	# correct_5 = torch.sum(flag)
-	# acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
-	# print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc5_prev:{:.2f}".format(acc, acc_5, acc_5_prev))
-	# return acc, acc_5
 
 
 def inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
@@ -149,7 +128,7 @@ def inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1
 	flag = torch.zeros(bs)
 	least_seed_need = torch.ones(bs).int() * 1000
 
-	for random_seed in range(25):
+	for random_seed in range(30):
 		tf = time.time()
 		r_idx = random_seed
 		

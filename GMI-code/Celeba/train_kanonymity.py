@@ -39,7 +39,7 @@ def cal_mean(least_seed_need):
         if least_seed_need[b] == 1001:
             fail += 1
             continue
-        num += least_seed_need[b]
+        num += least_seed_need[b].item()
 
     return num / (bs - fail), fail
 
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     G = Generator(z_dim)
     G = torch.nn.DataParallel(G).cuda()
     if improved_flag == True:
-        # D = Discriminator(3, 64, 1000)
-        D = MinibatchDiscriminator()
+        D = Discriminator(3, 64, 1000)
+        # D = MinibatchDiscriminator()
     else:
         D = DGWGAN(3)
     
@@ -131,13 +131,13 @@ if __name__ == "__main__":
     num_seed = 0
     num_fail = 0
     # no auxilary
-    for i in range(1):
+    for i in range(3):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            least_seed_need = inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=1000, iter_times=1500, clip_range=1, improved=improved_flag)
-            # least_seed_need = inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=15, iter_times=1500, clip_range=1)
+            least_seed_need = inversion_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
+            # least_seed_need = inversion_grad_constraint_k(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=500, iter_times=1500, clip_range=1)
             print("least_seed_need of batch %s \n" % idx, least_seed_need)
             mean_seed, fail = cal_mean(least_seed_need)
             num_seed += mean_seed
@@ -146,8 +146,8 @@ if __name__ == "__main__":
             print("number of failure is:", fail)
             iden += 60
 
-    num_seed /= 5   
-    num_fail /= 5 
+    num_seed /= 15   
+    num_fail /= 15 
 
     logger.info("=> Attack finished.")
     print("average number of seeds need is:", num_seed)

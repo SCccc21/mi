@@ -33,7 +33,7 @@ def get_logger():
 def get_acc(G, D, T, E, lamda):
     total_acc, total_acc5 = 0, 0
     # no auxilary
-    for i in range(1):
+    for i in range(5):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
@@ -43,8 +43,8 @@ def get_acc(G, D, T, E, lamda):
             total_acc += acc
             total_acc5 += acc5
 
-    aver_acc = total_acc / 5
-    aver_acc5 = total_acc5 / 5
+    aver_acc = total_acc / 25
+    aver_acc5 = total_acc5 / 25
     print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
     
     return aver_acc, aver_acc5
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     dict_acc5 = {}
     best_acc, best_acc5 = 0, 0
 
-    lamda_list = [50, 100, 500, 1000] # iden loss
+    lamda_list = [700, 800, 850, 1000] # iden loss
 
     
     for lamda in lamda_list:
@@ -138,13 +138,13 @@ if __name__ == "__main__":
 
     # print(dict_acc)
 
-    filename = open('./origin_search_result_acc.txt','w')#dict转txt
+    filename = open('./origin_search_acc.txt','w')#dict转txt
     for k,v in dict_acc.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')
     filename.close()
 
-    filename = open('./origin_search_result_acc5.txt','w')#dict转txt
+    filename = open('./origin_search_acc5.txt','w')#dict转txt
     for k,v in dict_acc5.items():
         filename.write(k+':\t'+str(v))
         filename.write('\n')
