@@ -7,7 +7,7 @@ from utils import log_sum_exp, save_tensor_images
 
 device = "cuda"
 num_classes = 1000
-save_img_dir = './fid/fid_origin_7500'
+save_img_dir = './attack_result_imgs_improved_mb_entropy'
 os.makedirs(save_img_dir, exist_ok=True)
 
 # generator, discriminator, target model,
@@ -214,7 +214,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		score = T(fake)[-1]
 		eval_prob = E(utils.low2high(fake))[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
-		# save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_7500.png".format(iden[0], r_idx)), nrow = 10)
+		save_tensor_images(fake.detach(), os.path.join(save_img_dir, "attack_result_image_{}_{}_entropy.png".format(iden[0], r_idx)), nrow = 10)
 		
 		cnt = 0
 		for i in range(bs):
@@ -241,7 +241,7 @@ def inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=150
 		if max_iden[i].item() == gt:
 			correct += 1
 			best_img = G(z_hat)[i]
-			# save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "attack_iden_{}_origin.png".format(iden[0]+i+1)))
+			# save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "attack_iden_{}.png".format(iden[0]+i+1)))
 		best_img = G(z_hat)[i]
 		save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "attack_iden_{}.png".format(iden[0]+i+1)))
 		# top5

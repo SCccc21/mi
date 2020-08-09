@@ -44,6 +44,7 @@ def log_sum_exp(x, axis = 1):
     m = torch.max(x, dim = 1)[0]
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(1)), dim = axis))
 
+
 save_img_dir = "/home/sichen/models/result/imgs_improved_celeba_gan"
 save_model_dir= "/home/sichen/models/improvedGAN"
 os.makedirs(save_model_dir, exist_ok=True)
@@ -95,15 +96,16 @@ if __name__ == "__main__":
     dataset, dataloader = utils.init_dataloader(args, file_path, batch_size, mode="gan")
 
     G = Generator(z_dim)
-    DG = Discriminator(3, 64, 1000)
-    # DG = MinibatchDiscriminator()
+    # DG = Discriminator(3, 64, 1000)
+    DG = MinibatchDiscriminator()
     
     G = torch.nn.DataParallel(G).cuda()
     DG = torch.nn.DataParallel(DG).cuda()
 
     dg_optimizer = torch.optim.Adam(DG.parameters(), lr=lr, betas=(0.5, 0.999))
     g_optimizer = torch.optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
-    # criterion = nn.CrossEntropyLoss().cuda()
+
+    entropy = HLoss()
     
 
     step = 0
@@ -145,9 +147,6 @@ if __name__ == "__main__":
             
             acc = torch.mean((output_label.max(1)[1] == y).float())
             
-            # wd = output_label.mean() - output_fake.mean()  # Wasserstein-1 Distance
-            # gp = gradient_penalty(imgs.data, f_imgs.data)
-            # loss_regular = - wd + gp * 10.0
             
             dg_optimizer.zero_grad()
             dg_loss.backward()
@@ -170,13 +169,12 @@ if __name__ == "__main__":
 
                 mom_gen = torch.mean(mom_gen, dim = 0)
                 mom_unlabel = torch.mean(mom_unlabel, dim = 0)
-                
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs())  # feature matching loss
-                # g_loss = - torch.mean(F.softplus(log_sum_exp(output_fake)))
 
-                # logit_dg = DG(f_imgs)
-                # g_loss = - logit_dg.mean()
+                Hloss = entropy(T(f_imgs)[-1])
+                
                 # import pdb; pdb.set_trace()
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 0.0001 * Hloss  # feature matching loss
+
                 
                 g_optimizer.zero_grad()
                 g_loss.backward()
@@ -189,13 +187,13 @@ if __name__ == "__main__":
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_celeba_G_0719.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_celeba_D_0719.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_entropy.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_entropy.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_result_image_{}_0719.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_entropy.png".format(epoch)), nrow = 8)
             for b in range(fake_image.size(0)):
                 writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(

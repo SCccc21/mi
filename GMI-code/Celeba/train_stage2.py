@@ -41,7 +41,7 @@ if __name__ == "__main__":
     model_name_T = "VGG16"
     model_name_E = "FaceNet"
     dataset_name = "celeba"
-    improved_flag = False
+    improved_flag = True
 
     file = "./config/attack" + ".json"
     args = load_json(json_file=file)
@@ -55,8 +55,10 @@ if __name__ == "__main__":
     # path_G = '/home/sichen/models/improvedGAN/improved_celeba_G_0719.tar'
     # path_D = '/home/sichen/models/improvedGAN/improved_celeba_D_0719.tar'
     
-    path_G = '/home/sichen/models/GAN/celeba_G.tar'
-    path_D = '/home/sichen/models/GAN/celeba_D.tar'
+    # path_G = '/home/sichen/models/GAN/celeba_G.tar'
+    # path_D = '/home/sichen/models/GAN/celeba_D.tar'
+    path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy.tar'
+    path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy.tar'
     path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 
@@ -117,20 +119,18 @@ if __name__ == "__main__":
 
     total_acc, total_acc5 = 0, 0
     # no auxilary
-    for i in range(1):
+    for i in range(5):
         iden = torch.from_numpy(np.arange(60))
 
         for idx in range(5):
             print("--------------------- Attack batch [%s]------------------------------" % idx)
-            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=7500, iter_times=1500, clip_range=1, improved=improved_flag)
-            # acc, acc5 = inversion_grad_constraint(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1, improved=improved_flag)
-            # acc, acc5 = natural_grad(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1)
+            acc, acc5 = inversion(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
             iden = iden + 60
             total_acc += acc
             total_acc5 += acc5
 
-    aver_acc = total_acc / 5
-    aver_acc5 = total_acc5 / 5
+    aver_acc = total_acc / 25
+    aver_acc5 = total_acc5 / 25
     print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}".format(aver_acc, aver_acc5))
 
     
