@@ -92,10 +92,29 @@ def public_private_splits(data_path):
             
 
     # print('number of images in public dir is:'.format())
+
+def combine(f, foldername, base_path):
+
+    img_path = os.path.join(base_path, foldername)
+    for i in range(1000):
+        basename = "{:05d}.png".format(i+int(foldername))
+        check_link(img_path, basename, base_path)
+        print("creat symlink for image ", basename)
+        f.write(basename)
+        f.write('\n')
     
 
  
 if __name__ == '__main__':
-    base_path = '/home/sichen/data'
-    public_private_splits(base_path)
-    # train_test_split('/home/sichen/data/splits_11/private')
+    # base_path = '/home/sichen/data'
+    # public_private_splits(base_path)
+    base_path = '/home/sichen/ffhq-dataset/imgs/thumbnails128x128'
+    no = 0
+    file_path = os.path.join(base_path, 'ganset.txt')
+    f = open(file_path, "w")
+    for i in range(30):
+        foldername = str(no).zfill(5)
+        no += 1000
+        combine(f, foldername, base_path)
+
+    f.close()

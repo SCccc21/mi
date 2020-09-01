@@ -124,8 +124,8 @@ if __name__ == "__main__":
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}_cross.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G_cross.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D_cross.tar"))
 

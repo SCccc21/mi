@@ -100,9 +100,6 @@ def init_dataloader(args, file_path, batch_size=64, mode="gan", iterator=False):
                                 pin_memory=True)
         interval = time.time() - tf
         print('Initializing data loader took %ds' % interval)
-    # if iterator:
-    #     data_loader = data_loader.__iter__()
-
     
     return data_set, data_loader
 

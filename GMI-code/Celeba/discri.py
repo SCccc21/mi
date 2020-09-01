@@ -68,6 +68,7 @@ class MinibatchDiscriminator(nn.Module):
         y = self.fc_layer(mb_out)
         
         return feat, y
+        # return mb_out, y
 
 
 class Discriminator(nn.Module):

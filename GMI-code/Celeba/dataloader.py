@@ -25,7 +25,7 @@ class ImageFolder(data.Dataset):
         self.mode = mode
         self.img_path = args["dataset"]["img_path"]
         self.model_name = args["dataset"]["model_name"]
-        self.img_list = os.listdir(self.img_path)
+        # self.img_list = os.listdir(self.img_path)
         self.processor = self.get_processor()
         self.name_list, self.label_list = self.get_list(file_path) 
         self.image_list = self.load_img()
@@ -66,10 +66,14 @@ class ImageFolder(data.Dataset):
         else:
             re_size = 64
             
-        crop_size = 108
-        
-        offset_height = (218 - crop_size) // 2
-        offset_width = (178 - crop_size) // 2
+        # crop_size = 108
+        # offset_height = (218 - crop_size) // 2
+        # offset_width = (178 - crop_size) // 2
+
+        #NOTE: dataset ffhq
+        crop_size = 94
+        offset_height = (128 - crop_size) // 2 
+        offset_width = (128 - crop_size) // 2
         crop = lambda x: x[:, offset_height:offset_height + crop_size, offset_width:offset_width + crop_size]
 
         proc = []
@@ -79,17 +83,13 @@ class ImageFolder(data.Dataset):
             proc.append(transforms.ToPILImage())
             proc.append(transforms.Resize((re_size, re_size)))
             proc.append(transforms.RandomHorizontalFlip(p=0.5))
-            #proc.append(transforms.Pad(5))
-            #proc.append(transforms.RandomCrop((re_size, re_size)))
             proc.append(transforms.ToTensor())
-            #proc.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
         else:
             proc.append(transforms.ToTensor())
             proc.append(transforms.Lambda(crop))
             proc.append(transforms.ToPILImage())
             proc.append(transforms.Resize((re_size, re_size)))
             proc.append(transforms.ToTensor())
-            #proc.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
         
             
         return transforms.Compose(proc)
