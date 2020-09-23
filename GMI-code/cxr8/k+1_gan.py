@@ -52,9 +52,9 @@ os.makedirs(save_img_dir, exist_ok=True)
 
 dataset_name = "celeba"
 
-log_path = "./attack_logs"
+log_path = "./pf83_attack_logs"
 os.makedirs(log_path, exist_ok=True)
-log_file = "ffhq_improvedGAN_entropy.txt"
+log_file = "pf83_improvedGAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     args = load_json(json_file=file)
     writer = SummaryWriter(log_path)
 
-    file_path = args['dataset']['gan_file_path']
+    file_path = args['dataset']['train_file_path']
     model_name = args['dataset']['model_name']
     lr = args[model_name]['lr']
     batch_size = args[model_name]['batch_size']
@@ -76,16 +76,15 @@ if __name__ == "__main__":
     epochs = args[model_name]['epochs']
     n_critic = args[model_name]['n_critic']
 
-    model_name_T = "FaceNet64"
+    model_name_T = "VGG16"
+    path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
 
     if model_name_T.startswith("VGG16"):
         T = VGG16(1000)
-        path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
     elif model_name_T.startswith('IR152'):
         T = IR152(1000)
     elif model_name_T == "FaceNet64":
         T = FaceNet64(1000)
-        path_T = '/home/sichen/models/target_model/target_ckp/FaceNet64_88.50.tar'
 
     T = torch.nn.DataParallel(T).cuda()
     ckp_T = torch.load(path_T)
@@ -172,8 +171,8 @@ if __name__ == "__main__":
 
                 # Hloss = entropy(T(f_imgs)[-1])
                 Hloss = entropy(output_fake)
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
-                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())
+                # g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs())
                 # import pdb; pdb.set_trace()
 
                 
@@ -188,13 +187,13 @@ if __name__ == "__main__":
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_ffhq_entropy.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_ffhq_entropy.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_pf83.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_pf83.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_ffhq_entropy.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_pf83.png".format(epoch)), nrow = 8)
             for b in range(fake_image.size(0)):
                 writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(

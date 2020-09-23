@@ -11,8 +11,8 @@ import torchvision.utils as tvls
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-from discri import DGWGAN, Discriminator, MinibatchDiscriminator
-from generator import Generator
+from discri import MinibatchDiscriminator_MNIST
+from generator import GeneratorMNIST
 from classify import *
 from tensorboardX import SummaryWriter
 from datetime import datetime
@@ -45,16 +45,16 @@ def log_sum_exp(x, axis = 1):
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(1)), dim = axis))
 
 
-save_img_dir = "/home/sichen/models/result/imgs_improved_celeba_gan"
+save_img_dir = "/home/sichen/models/result/imgs_improved_mnist_gan"
 save_model_dir= "/home/sichen/models/improvedGAN"
 os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 
-dataset_name = "celeba"
+dataset_name = "mnist"
 
-log_path = "./attack_logs"
+log_path = "./mnist_attack_logs"
 os.makedirs(log_path, exist_ok=True)
-log_file = "ffhq_improvedGAN_entropy.txt"
+log_file = "mnist_improvedGAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
@@ -76,17 +76,10 @@ if __name__ == "__main__":
     epochs = args[model_name]['epochs']
     n_critic = args[model_name]['n_critic']
 
-    model_name_T = "FaceNet64"
+    model_name_T = "mnist_cnn"
+    path_T = '/home/sichen/models/target_model/target_ckp/mnist_cnn_target_99.92.tar'
 
-    if model_name_T.startswith("VGG16"):
-        T = VGG16(1000)
-        path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
-    elif model_name_T.startswith('IR152'):
-        T = IR152(1000)
-    elif model_name_T == "FaceNet64":
-        T = FaceNet64(1000)
-        path_T = '/home/sichen/models/target_model/target_ckp/FaceNet64_88.50.tar'
-
+    T = MCNN(5)
     T = torch.nn.DataParallel(T).cuda()
     ckp_T = torch.load(path_T)
     T.load_state_dict(ckp_T['state_dict'], strict=False)
@@ -96,9 +89,9 @@ if __name__ == "__main__":
 
     dataset, dataloader = utils.init_dataloader(args, file_path, batch_size, mode="gan")
 
-    G = Generator(z_dim)
+    G = GeneratorMNIST(z_dim)
     # DG = Discriminator(3, 64, 1000)
-    DG = MinibatchDiscriminator()
+    DG = MinibatchDiscriminator_MNIST()
     
     G = torch.nn.DataParallel(G).cuda()
     DG = torch.nn.DataParallel(DG).cuda()
@@ -172,8 +165,8 @@ if __name__ == "__main__":
 
                 # Hloss = entropy(T(f_imgs)[-1])
                 Hloss = entropy(output_fake)
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
-                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())
+                # g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs())
                 # import pdb; pdb.set_trace()
 
                 
@@ -188,13 +181,13 @@ if __name__ == "__main__":
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_ffhq_entropy.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_ffhq_entropy.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_G.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_D.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_ffhq_entropy.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_mnist_image_{}.png".format(epoch)), nrow = 8)
             for b in range(fake_image.size(0)):
                 writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(

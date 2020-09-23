@@ -44,7 +44,7 @@ dataset_name = "celeba"
 
 log_path = "./attack_logs"
 os.makedirs(log_path, exist_ok=True)
-log_file = "GAN.txt"
+log_file = "ffhq_GAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 if __name__ == "__main__":
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     file = "./config/" + dataset_name + ".json"
     args = load_json(json_file=file)
 
-    file_path = args['dataset']['train_file_path']
+    file_path = args['dataset']['gan_file_path']
     model_name = args['dataset']['model_name']
     lr = args[model_name]['lr']
     batch_size = args[model_name]['batch_size']
@@ -124,8 +124,7 @@ if __name__ == "__main__":
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}_cross.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}_ffhq.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G_cross.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D_cross.tar"))
-
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G_ffhq.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D_ffhq.tar"))

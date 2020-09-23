@@ -14,9 +14,10 @@ import time
 import random
 import os, logging
 import numpy as np
-from attack import inversion, inversion_grad_constraint, natural_grad
+from attack import inversion
 from dist_attack import dist_inversion
 from generator import Generator
+from sklearn.model_selection import GridSearchCV
 
 
 #logger
@@ -30,6 +31,24 @@ def get_logger():
 	logger.addHandler(handler)
 	return logger
 
+def get_acc(G, D, T, E, num_seeds):
+	aver_acc, aver_acc5, aver_var = 0, 0, 0
+	# no auxilary
+	for i in range(5):
+		iden = torch.from_numpy(np.arange(60))
+
+		for idx in range(5):
+			print("--------------------- Attack batch [%s]------------------------------" % idx)
+			acc, acc5, var = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=num_seeds)
+			iden = iden + 60
+			aver_acc += acc / 25
+			aver_acc5 += acc5 / 25
+			aver_var += var / 25
+
+	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}".format(aver_acc, aver_acc5, aver_var))
+	
+	return aver_acc, aver_acc5, aver_var
+
 
 
 if __name__ == "__main__":
@@ -41,7 +60,7 @@ if __name__ == "__main__":
 	model_name_T = "VGG16"
 	model_name_E = "FaceNet"
 	dataset_name = "celeba"
-	improved_flag = False
+	improved_flag = True
 
 	file = "./config/attack" + ".json"
 	args = load_json(json_file=file)
@@ -50,19 +69,9 @@ if __name__ == "__main__":
    
 	z_dim = 100
 
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0715.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0715.tar'
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy2.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy2.tar'
-	
-	path_G = '/home/sichen/models/GAN/celeba_G.tar'
-	path_D = '/home/sichen/models/GAN/celeba_D.tar'
-	# path_G = '/home/sichen/models/GAN/celeba_G_ffhq.tar'
-	# path_D = '/home/sichen/models/GAN/celeba_G_ffhq.tar'
-
-	
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_ffhq_entropy.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_ffhq_entropy.tar'
+	path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy2.tar'
+	path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy2.tar'
+	path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
 	path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 
 	###########################################
@@ -85,13 +94,10 @@ if __name__ == "__main__":
 
 	if model_name_T.startswith("VGG16"):
 		T = VGG16(1000)
-		path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
 	elif model_name_T.startswith('IR152'):
 		T = IR152(1000)
-		path_T = '/home/sichen/models/target_model/target_ckp/IR152_91.16.tar'
 	elif model_name_T == "FaceNet64":
 		T = FaceNet64(1000)
-		path_T = '/home/sichen/models/target_model/target_ckp/FaceNet64_88.50.tar'
 
 	
 	T = torch.nn.DataParallel(T).cuda()
@@ -103,31 +109,47 @@ if __name__ == "__main__":
 	ckp_E = torch.load(path_E)
 	E.load_state_dict(ckp_E['state_dict'], strict=False)
 
-	# with mask
+	
+	################ param search #############
 
-	###########     load identity    ##########
-	# batch_size = 64
-	# file_path = args['dataset']['attack_file_path']
-	# data_set, data_loader = init_dataloader(args, file_path, batch_size, mode="classify")
+	# dict_acc = {}
+	# dict_acc5 = {}
+	# best_acc, best_acc5 = 0, 0
+	
+	seeds_list = [6, 7, 8, 9, 10]
+	f = open('./seeds.txt','w')#dict转txt
 
-	############         attack     ###########
-	logger.info("=> Begin attacking ...")
+	for num_seeds in seeds_list:
+
+		aver_acc, aver_acc5, aver_var = get_acc(G, D, T, E, num_seeds)
+		
+		params =  str(num_seeds) + 'seeds: ' + str(aver_acc) + ',' + str(aver_acc5) + ',' + str(aver_var)
+		print(params)
+		f.write(params)
+		f.write('\n')
+		
+		# dict_acc[params] = str(aver_acc) + ',' + str(aver_acc5) + ',' + str(aver_var)
+		# dict_acc5[params] = aver_acc5
+	f.close()
+
+	# print(dict_acc)
+
+	# filename = open('./seeds.txt','w')#dict转txt
+	# for k,v in dict_acc.items():
+	#     filename.write(k+':\t'+str(v))
+	#     filename.write('\n')
+	# filename.close()
+
+	# filename = open('./seeds5.txt','w')#dict转txt
+	# for k,v in dict_acc5.items():
+	#     filename.write(k+':\t'+str(v))
+	#     filename.write('\n')
+	# filename.close()
 
 
-	aver_acc, aver_acc5, aver_var = 0, 0, 0
-	# no auxilary
-	for i in range(5):
-		iden = torch.from_numpy(np.arange(60))
+	
 
-		for idx in range(5):
-			print("--------------------- Attack batch [%s]------------------------------" % idx)
-			acc, acc5, var = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-			# acc, acc5, var = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=5)
-			iden = iden + 60
-			aver_acc += acc / 25
-			aver_acc5 += acc5 / 25
-			aver_var += var / 25
 
-	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}".format(aver_acc, aver_acc5, aver_var))
+	
 
 	

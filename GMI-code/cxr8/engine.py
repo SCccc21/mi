@@ -40,7 +40,6 @@ def train_reg(args, model, criterion, optimizer, trainloader, testloader, n_epoc
             iden = iden.view(-1)
 
             feats, out_prob = model(img)
-            # import pdb; pdb.set_trace()
             cross_loss = criterion(out_prob, iden)
             # print("max:{}, min:{}".format(iden.max(), iden.min()))
             #triplet_loss = triplet(feats, iden)
@@ -110,3 +109,7 @@ def train_vib(args, model, criterion, optimizer, trainloader, testloader, n_epoc
 
 	print("Best Acc:{:.2f}".format(best_ACC))
 	return best_model, best_ACC
+
+
+
+

@@ -125,6 +125,6 @@ if __name__ == "__main__":
             fake_image = G(z)
             save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "MNIST_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "MNIST_D.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "cxr_G.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "cxr_D.tar"))
 

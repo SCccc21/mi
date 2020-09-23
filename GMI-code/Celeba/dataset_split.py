@@ -103,18 +103,78 @@ def combine(f, foldername, base_path):
         f.write(basename)
         f.write('\n')
     
+def getListOfFiles(f, dirName):
+    # create a list of file and sub directories 
+    # names in the given directory 
+    listOfFile = os.listdir(dirName)
+    allFiles = list()
+    # Iterate over all the entries
+    for entry in listOfFile:
+        # Create full path
+        fullPath = os.path.join(dirName, entry)
+        # If entry is a directory then get the list of files in this directory 
+        if os.path.isdir(fullPath):
+            allFiles = allFiles + getListOfFiles(fullPath)
+        else:
+            allFiles.append(fullPath)
+            f.write(entry)
+            f.write('\n')
+                
+    return allFiles
+
+
+def mnist_split(base_path):
+    public_path = os.path.join(base_path, 'ganset.txt')
+    private_train = os.path.join(base_path, 'train.txt')
+    private_test = os.path.join(base_path, 'test.txt')
+    f_public = open(public_path, "w")
+    f_private_train = open(private_train, "w")
+    f_private_test = open(private_test, "w")
+
+    # train file 60,000
+    listOfFile = os.listdir(base_path)
+    for entry in listOfFile:
+        # import pdb; pdb.set_trace()
+        # print(entry)
+        if entry.endswith('.png'):
+            img_name, label = os.path.splitext(entry)[0].strip().split('_')
+            if int(img_name) <= 60000:
+                # train
+                if int(label) in [0, 1, 2, 3, 4]:
+                    # private
+                    f_private_train.write(entry + ' ' + str(label))
+                    f_private_train.write('\n')
+
+                else:
+                    # public
+                    f_public.write(entry)
+                    f_public.write('\n')
+
+            else:
+                # test
+                if int(label) in [0, 1, 2, 3, 4]:
+                    # private
+                    f_private_test.write(entry + ' ' + str(label))
+                    f_private_test.write('\n')
+
+                else:
+                    # public
+                    f_public.write(entry)
+                    f_public.write('\n')
 
  
 if __name__ == '__main__':
     # base_path = '/home/sichen/data'
     # public_private_splits(base_path)
-    base_path = '/home/sichen/ffhq-dataset/imgs/thumbnails128x128'
+    # base_path = '/home/sichen/data/pf83_fixed'
+    base_path = '/home/sichen/data/MNIST_imgs'
     no = 0
-    file_path = os.path.join(base_path, 'ganset.txt')
-    f = open(file_path, "w")
-    for i in range(30):
-        foldername = str(no).zfill(5)
-        no += 1000
-        combine(f, foldername, base_path)
+    
+    # for i in range(30):
+    #     foldername = str(no).zfill(5)
+    #     no += 1000
+    #     combine(f, foldername, base_path)
 
-    f.close()
+    mnist_split(base_path)
+
+    # f.close()

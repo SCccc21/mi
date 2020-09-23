@@ -31,10 +31,11 @@ def main(args, model_name, trainloader, testloader):
 		
     elif model_name == "FaceNet64":
         net = classify.FaceNet64(n_classes)
-        BACKBONE_RESUME_ROOT = "ir50.pth"
+        # BACKBONE_RESUME_ROOT = "ir50.pth"
+        BACKBONE_RESUME_ROOT = os.path.join(root_path, "backbone_ir50_ms1m_epoch120.pth")
         print("Loading Backbone Checkpoint ")
-        load_my_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
-        net.fc_layer.apply(net.weight_init)
+        utils.load_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
+        # net.fc_layer.apply(net.weight_init)
 
     elif model_name == "IR50":
         if mode == "reg":
@@ -51,9 +52,9 @@ def main(args, model_name, trainloader, testloader):
         else:
             net = classify.IR152_vib(n_classes)
 
-        BACKBONE_RESUME_ROOT = "IR152.pth"
+        BACKBONE_RESUME_ROOT = os.path.join(root_path, "Backbone_IR_152_Epoch_112_Batch_2547328_Time_2019-07-13-02-59_checkpoint.pth")
         print("Loading Backbone Checkpoint ")
-        load_my_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
+        utils.load_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
         
     else:
         print("Model name Error")
@@ -78,7 +79,7 @@ def main(args, model_name, trainloader, testloader):
     elif mode == "vib":
         best_model, best_acc = engine.train_vib(args, net, criterion, optimizer, trainloader, testloader, n_epochs)
 	
-    # torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "{}_{:.2f}.tar").format(model_name, best_acc))
+    torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "{}_{:.2f}.tar").format(model_name, best_acc))
 
 if __name__ == '__main__':
     file = "./config/classify.json"

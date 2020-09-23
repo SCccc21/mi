@@ -10,8 +10,8 @@ import torch.autograd as autograd
 import statistics 
 
 device = "cuda"
-num_classes = 1000
-save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/fid_dist_ffhq_mb_entropy'
+num_classes = 5
+save_img_dir = './attack_imgs_mnist_mbdist'
 os.makedirs(save_img_dir, exist_ok=True)
 
 def reparameterize(mu, logvar):
@@ -27,7 +27,7 @@ def reparameterize(mu, logvar):
 	return eps * std + mu
 
 
-def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False, num_seeds=5):
+def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -37,13 +37,14 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 	T.eval()
 	E.eval()
 
-	# max_score = torch.zeros(bs)
-	# max_iden = torch.zeros(bs)
-	# max_prob = torch.zeros(bs, num_classes)
-	# z_hat = torch.zeros(bs, 100)
-	# flag = torch.zeros(bs)
+	max_score = torch.zeros(bs)
+	max_iden = torch.zeros(bs)
+	max_prob = torch.zeros(bs, 10)
+	z_hat = torch.zeros(bs, 100)
+	flag = torch.zeros(bs)
 	no = torch.zeros(bs) # index for saving all success attack images
 
+	# for random_seed in range(1):
 	tf = time.time()
 
 	#NOTE
@@ -87,7 +88,7 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 
 		if (i+1) % 300 == 0:
 			fake_img = G(z.detach())
-			eval_prob = E(utils.low2high(fake_img))[-1]
+			eval_prob = E(fake_img)[-1]
 			eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
 			acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
 			print("Iteration:{}\tPrior Loss:{:.2f}\tIden Loss:{:.2f}\tAttack Acc:{:.2f}".format(i+1, Prior_Loss_val, Iden_Loss_val, acc))
@@ -96,43 +97,34 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 	print("Time:{:.2f}".format(interval))
 	
 	res = []
-	res5 = []
-	for random_seed in range(num_seeds):
-		tf = time.time()
+	for random_seed in range(5):
 		z = reparameterize(mu, log_var)
 		fake = G(z)
 		score = T(fake)[-1]
-		eval_prob = E(utils.low2high(fake))[-1]
+		eval_prob = E(fake)[-1]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
 		
-		cnt, cnt5 = 0, 0
+		cnt = 0
 		for i in range(bs):
 			gt = iden[i].item()
-			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
 				max_prob[i] = eval_prob[i]
-				# z_hat[i, :] = z[i, :]
-			'''
+				z_hat[i, :] = z[i, :]
 			if eval_iden[i].item() == gt:
 				cnt += 1
-				# flag[i] = 1
-				# best_img = G(z)[i]
-				# save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
+				flag[i] = 1
+				best_img = G(z)[i]
+				save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, i, int(no[i]))))
 				no[i] += 1
-			_, top5_idx = torch.topk(eval_prob[i], 5)
-			if gt in top5_idx:
-				cnt5 += 1
 				
-		interval = time.time() - tf
-		print("Time:{:.2f}\tSeed:{}\tAcc:{:.2f}\t".format(interval, random_seed, cnt * 1.0 / bs))
+		
+		print("Seed:{}\tAcc:{:.2f}\t".format(random_seed, cnt * 1.0 / bs))
 		res.append(cnt * 1.0 / bs)
-		res5.append(cnt5 * 1.0 / bs)
 
 		torch.cuda.empty_cache()
 
-	'''
 	correct = 0
 	cnt5 = 0
 	for i in range(bs):
@@ -144,10 +136,10 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		_, top5_idx = torch.topk(max_prob[i], 5)
 		if gt in top5_idx:
 			cnt5 += 1
-	'''
 		
 	
-	acc, acc_5 = statistics.mean(res), statistics.mean(res5)
+	correct_5 = torch.sum(flag)
+	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
 	acc_var = statistics.variance(res)
 	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}".format(acc, acc_5, acc_var))
 	

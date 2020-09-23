@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 from torch.nn.modules.loss import _Loss
 from sklearn.model_selection import train_test_split
 
-# mnist_path = "./data/MNIST"
-# mnist_img_path = "./data/MNIST_imgs"
+# mnist_path = "/home/sichen/data/mnist"
+# mnist_img_path = "/home/sichen/data/MNIST_imgs"
 # cifar_path = "./data/CIFAR"
 # cifar_img_path = "./data/CIFAR_imgs"
 # os.makedirs(mnist_path, exist_ok=True)
@@ -31,7 +31,7 @@ class ImageFolder(data.Dataset):
         self.image_list = self.load_img()
         self.num_img = len(self.image_list)
         self.n_classes = args["dataset"]["n_classes"]
-        # print("Load " + str(self.num_img) + " images")
+        print("Load " + str(self.num_img) + " images")
 
     
     def get_list(self, file_path):
@@ -66,14 +66,19 @@ class ImageFolder(data.Dataset):
         else:
             re_size = 64
             
-        # crop_size = 108
-        # offset_height = (218 - crop_size) // 2
-        # offset_width = (178 - crop_size) // 2
+        crop_size = 108
+        offset_height = (218 - crop_size) // 2
+        offset_width = (178 - crop_size) // 2
 
         #NOTE: dataset ffhq
-        crop_size = 94
-        offset_height = (128 - crop_size) // 2 
-        offset_width = (128 - crop_size) // 2
+        # crop_size = 88
+        # offset_height = (128 - crop_size) // 2 
+        # offset_width = (128 - crop_size) // 2
+
+        # #NOTE: dataset pf83
+        # crop_size = 176
+        # offset_height = (256 - crop_size) // 2
+        # offset_width = (256 - crop_size) // 2
         crop = lambda x: x[:, offset_height:offset_height + crop_size, offset_width:offset_width + crop_size]
 
         proc = []
@@ -127,9 +132,12 @@ class GrayFolder(data.Dataset):
         name_list, label_list = [], []
         f = open(file_path, "r")
         for line in f.readlines():
-            img_name, iden = line.strip().split(' ')
+            if self.mode == "gan":
+                img_name = line.strip()
+            else:
+                img_name, iden = line.strip().split(' ')
+                label_list.append(int(iden))
             name_list.append(img_name)
-            label_list.append(int(iden))
 
         return name_list, label_list
 
@@ -146,7 +154,7 @@ class GrayFolder(data.Dataset):
     
     def get_processor(self):
         proc = []
-        if self.args['dataset']['name'] == "MNIST":
+        if self.args['dataset']['name'] == "mnist":
             re_size = 32
         else:
             re_size = 64
@@ -179,12 +187,14 @@ def load_mnist():
     for imgs, labels in train_loader:
         cnt += 1
         img_name = str(cnt) + '_' + str(labels.item()) + '.png'
-        utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
+        # utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
+    print("number of train files:", cnt)
 
     for imgs, labels in test_loader:
         cnt += 1
         img_name = str(cnt) + '_' + str(labels.item()) + '.png'
-        utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
+        # utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
 
 if __name__ == "__main__":
+    load_mnist()
     print("ok")
