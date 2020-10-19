@@ -1,0 +1,20 @@
+{
+    "dataset":{
+      "name":"cxr",
+      "gan_file_path":"/home/sichen/data/cxr8/ganset.txt",
+      "img_path": "/home/sichen/data/cxr8/images",
+      "model_name":"cxr_gan",
+      "mode":"reg",
+      "n_classes":5,
+      "gpus":"4, 5, 6, 7"
+    },
+    "cxr_gan":{
+        "lr": 0.0002,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 100,
+        "n_critic": 5
+    }
+}
+  
+  

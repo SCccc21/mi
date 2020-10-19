@@ -11,8 +11,8 @@ import torchvision.utils as tvls
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-from discri import DGWGAN, Discriminator, MinibatchDiscriminator
-from generator import Generator
+from discri import MinibatchDiscriminator
+from generator import GeneratorCXR
 from classify import *
 from tensorboardX import SummaryWriter
 from datetime import datetime
@@ -45,30 +45,29 @@ def log_sum_exp(x, axis = 1):
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(1)), dim = axis))
 
 
-save_img_dir = "/home/sichen/models/result/imgs_improved_celeba_gan"
+save_img_dir = "./Attack/imgs_improved_celeba_gan"
 save_model_dir= "/home/sichen/models/improvedGAN"
 os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 
-dataset_name = "celeba"
 
-log_path = "./pf83_attack_logs"
+log_path = "./Attack/attack_logs"
 os.makedirs(log_path, exist_ok=True)
-log_file = "pf83_improvedGAN.txt"
+log_file = "cxr_improvedGAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
     global args, writer
     
-    file = "./config/" + dataset_name + ".json"
+    file = "./config/cxr.json"
     args = load_json(json_file=file)
     writer = SummaryWriter(log_path)
 
-    file_path = args['dataset']['train_file_path']
+    file_path = args['dataset']['gan_file_path']
     model_name = args['dataset']['model_name']
     lr = args[model_name]['lr']
     batch_size = args[model_name]['batch_size']
@@ -77,14 +76,10 @@ if __name__ == "__main__":
     n_critic = args[model_name]['n_critic']
 
     model_name_T = "VGG16"
-    path_T = '/home/sichen/models/target_model/target_ckp/VGG16_88.26.tar'
+    path_T = './Attack/target_ckp/cxr_VGG16_target_45.13.tar'
 
     if model_name_T.startswith("VGG16"):
-        T = VGG16(1000)
-    elif model_name_T.startswith('IR152'):
-        T = IR152(1000)
-    elif model_name_T == "FaceNet64":
-        T = FaceNet64(1000)
+        T = VGG16(7)
 
     T = torch.nn.DataParallel(T).cuda()
     ckp_T = torch.load(path_T)
@@ -95,9 +90,8 @@ if __name__ == "__main__":
 
     dataset, dataloader = utils.init_dataloader(args, file_path, batch_size, mode="gan")
 
-    G = Generator(z_dim)
-    # DG = Discriminator(3, 64, 1000)
-    DG = MinibatchDiscriminator()
+    G = GeneratorCXR(z_dim)
+    DG = MinibatchDiscriminator(1, 64, 7)
     
     G = torch.nn.DataParallel(G).cuda()
     DG = torch.nn.DataParallel(DG).cuda()
@@ -130,7 +124,7 @@ if __name__ == "__main__":
             z = torch.randn(bs, z_dim).cuda()
             f_imgs = G(z)
 
-            y_prob = T(imgs)[-1]
+            y_prob = T(imgs)
             y = torch.argmax(y_prob, dim=1).view(-1)
             
 
@@ -171,8 +165,8 @@ if __name__ == "__main__":
 
                 # Hloss = entropy(T(f_imgs)[-1])
                 Hloss = entropy(output_fake)
-                # g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs())
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
+                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())
                 # import pdb; pdb.set_trace()
 
                 
@@ -187,13 +181,13 @@ if __name__ == "__main__":
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_G_pf83.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_celeba_D_pf83.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_cxr_G.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_cxr_D.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_pf83.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "improved_mb_gan_image_{}_cxr.png".format(epoch)), nrow = 8)
             for b in range(fake_image.size(0)):
                 writer.add_image('Visualization_%d' % b, fake_image[b])
             # shutil.copyfile(

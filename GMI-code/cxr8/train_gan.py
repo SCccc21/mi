@@ -10,8 +10,8 @@ from torch.autograd import grad
 import torchvision.utils as tvls
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
-from discri import DGWGAN32
-from generator import GeneratorMNIST
+from discri import DGWGAN
+from generator import GeneratorCXR
 
 def freeze(net):
     for p in net.parameters():
@@ -43,7 +43,7 @@ os.makedirs(save_model_dir, exist_ok=True)
 os.makedirs(save_img_dir, exist_ok=True)
 os.makedirs(log_path, exist_ok=True)
 
-dataset_name = "mnist"
+dataset_name = "cxr"
 
 log_file = "GAN.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
@@ -67,8 +67,8 @@ if __name__ == "__main__":
 
     dataset, dataloader = init_dataloader(args, file_path, batch_size, mode="gan")
 
-    G = GeneratorMNIST(z_dim)
-    DG = DGWGAN32()
+    G = GeneratorCXR(z_dim)
+    DG = DGWGAN(1, 64)
     
     G = torch.nn.DataParallel(G).cuda()
     DG = torch.nn.DataParallel(DG).cuda()
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
         end = time.time()
         interval = end - start
-        print("Epoch:%d \t Time:%.2f" % (epoch, interval))
+        print("Epoch:%d \t Time:%.2f\t Generator loss:%.2f" % (epoch, interval, g_loss))
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)

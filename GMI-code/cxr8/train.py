@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 dataset_name = "cxr"
 device = "cuda"
-root_path = "/home/sichen/models/target_model"
+root_path = "./Attack"
 log_path = os.path.join(root_path, "target_logs")
 model_path = os.path.join(root_path, "target_ckp")
 os.makedirs(model_path, exist_ok=True)
@@ -16,25 +16,7 @@ def main(args, model_name, trainloader, testloader):
 	n_classes = args["dataset"]["n_classes"]
 	mode = args["dataset"]["mode"]
 	if model_name == "VGG16":
-		if mode == "reg": 
-			net = classify.VGG16(n_classes)
-		elif mode == "vib":
-			net = classify.VGG16_vib(n_classes)
-	
-	elif model_name == "FaceNet":
-		net = classify.FaceNet(n_classes)
-		# BACKBONE_RESUME_ROOT = os.path.join(root_path, "ir50.pth")
-		BACKBONE_RESUME_ROOT = os.path.join(root_path, "backbone_ir50_ms1m_epoch120.pth")
-		print("Loading Backbone Checkpoint ")
-		utils.load_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
-		#utils.weights_init_classifier(net.fc_layer)
-		
-	elif model_name == "FaceNet64":
-		net = classify.FaceNet64(n_classes)
-		BACKBONE_RESUME_ROOT = "ir50.pth"
-		print("Loading Backbone Checkpoint ")
-		load_my_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
-		net.fc_layer.apply(net.weight_init)
+		net = classify.VGG16(n_classes)
 
 	elif model_name == "IR50":
 		if mode == "reg":
@@ -46,20 +28,11 @@ def main(args, model_name, trainloader, testloader):
 		print("Loading Backbone Checkpoint ")
 		utils.load_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
 		
-	elif model_name == "IR152":
-		if mode == "reg":
-			net = classify.IR152(n_classes)
-		else:
-			net = classify.IR152_vib(n_classes)
-
-		BACKBONE_RESUME_ROOT = "IR152.pth"
-		print("Loading Backbone Checkpoint ")
-		load_my_state_dict(net.feature, torch.load(BACKBONE_RESUME_ROOT))
+	elif model_name == "VGG19":
+		net = classify.VGG19(n_classes)
 		
-	elif model_name == "mnist_cnn":
-		# net = classify.Mnist_CNN()
-		# net = classify.MCNN(5) # target
-		net = classify.SCNN(5)
+	elif model_name == "mobilenet_v2":
+		net = classify.mobilenet_v2()
 
 	else:
 		print("Model name Error")
@@ -84,7 +57,7 @@ def main(args, model_name, trainloader, testloader):
 	elif mode == "vib":
 		best_model, best_acc = engine.train_vib(args, net, criterion, optimizer, trainloader, testloader, n_epochs)
 	
-	torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "{}_target_{:.2f}.tar").format(model_name, best_acc))
+	torch.save({'state_dict':best_model.state_dict()}, os.path.join(model_path, "cxr_{}_eval_{:.2f}.tar").format(model_name, best_acc))
 
 if __name__ == '__main__':
 	file = "./config/classify_cxr.json"
@@ -94,7 +67,8 @@ if __name__ == '__main__':
 	log_file = "{}.txt".format(model_name)
 	utils.Tee(os.path.join(log_path, log_file), 'w')
 
-	os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+	# os.environ["CUDA_VISIBLE_DEVICES"] = '0,1,2,3'
+	os.environ["CUDA_VISIBLE_DEVICES"] = '4,5,6,7'
 	print(log_file)
 	print("---------------------Training [%s]---------------------" % model_name)
 	utils.print_params(args["dataset"], args[model_name], dataset=args['dataset']['name'])

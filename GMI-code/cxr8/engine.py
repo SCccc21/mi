@@ -16,7 +16,7 @@ def test(model, criterion, dataloader):
         bs = img.size(0)
         iden = iden.view(-1)
 
-        out_prob = model(img)[-1]
+        out_prob = model(img)
         out_iden = torch.argmax(out_prob, dim=1).view(-1)
         ACC += torch.sum(iden == out_iden).item()
         cnt += bs
@@ -39,7 +39,8 @@ def train_reg(args, model, criterion, optimizer, trainloader, testloader, n_epoc
             bs = img.size(0)
             iden = iden.view(-1)
 
-            feats, out_prob = model(img)
+            # feats, out_prob = model(img)
+            out_prob = model(img)
             cross_loss = criterion(out_prob, iden)
             # print("max:{}, min:{}".format(iden.max(), iden.min()))
             #triplet_loss = triplet(feats, iden)

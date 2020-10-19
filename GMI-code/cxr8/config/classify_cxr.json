@@ -1,0 +1,71 @@
+{
+    "dataset":{
+      "name":"cxr",
+      "train_file_path":"/home/sichen/data/cxr8/train.txt",
+      "test_file_path":"/home/sichen/data/cxr8/test.txt",
+      "img_path": "/home/sichen/data/cxr8/images",
+      "model_name":"VGG19",
+      "mode":"reg",
+      "n_classes":7,
+      "gpus":"4, 5, 6, 7"
+    },
+    "mnist_cnn":{
+        "epochs":20,
+        "batch_size":64,
+        "instance":4,
+        "lr":0.01,
+        "momentum":0.5,
+        "weight_decay":0,
+        "gamma":0.2,
+        "adjust_epochs":[20, 35]
+    },
+    "VGG19":{
+      "epochs":60,
+      "batch_size":64,
+      "instance":4,
+      "lr":1e-2,
+      "momentum":0.9,
+      "weight_decay":1e-4,
+      "gamma":0.2,
+      "adjust_epochs":[20, 35]
+    },
+    "VGG16":{
+      "epochs":50,
+      "batch_size":64,
+      "instance":4,
+      "lr":1e-2,
+      "momentum":0.9,
+      "weight_decay":1e-4,
+      "gamma":0.2,
+      "adjust_epochs":[20, 35]
+    },
+    "IR50":{
+      "epochs":40,
+      "batch_size":64,
+      "lr":1e-2,
+      "momentum":0.9,
+      "weight_decay":1e-4,
+      "lrdecay_epoch":10,
+      "lrdecay":0.1
+    },
+    "IR18":{
+      "epochs":60,
+      "batch_size":64,
+      "lr":1e-2,
+      "momentum":0.9,
+      "weight_decay":1e-4,
+      "lrdecay_epoch":10,
+      "lrdecay":0.1
+    },
+    "mobilenet_v2":{
+      "epochs":60,
+      "batch_size":64,
+      "lr":1e-2,
+      "momentum":0.9,
+      "weight_decay":1e-4,
+      "lrdecay_epoch":10,
+      "lrdecay":0.1
+    }
+  }
+  
+  

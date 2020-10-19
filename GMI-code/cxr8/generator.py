@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-class Generator(nn.Module):
+class GeneratorCXR(nn.Module):
     def __init__(self, in_dim=100, dim=64):
-        super(Generator, self).__init__()
+        super(GeneratorCXR, self).__init__()
         def dconv_bn_relu(in_dim, out_dim):
             return nn.Sequential(
                 nn.ConvTranspose2d(in_dim, out_dim, 5, 2,
@@ -19,7 +19,7 @@ class Generator(nn.Module):
             dconv_bn_relu(dim * 8, dim * 4),
             dconv_bn_relu(dim * 4, dim * 2),
             dconv_bn_relu(dim * 2, dim),
-            nn.ConvTranspose2d(dim, 3, 5, 2, padding=2, output_padding=1),
+            nn.ConvTranspose2d(dim, 1, 5, 2, padding=2, output_padding=1),
             nn.Sigmoid())
 
     def forward(self, x):

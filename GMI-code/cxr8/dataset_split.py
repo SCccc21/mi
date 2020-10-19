@@ -189,7 +189,7 @@ def load_cxr_private(base_path):
 		if cxr['Finding Labels'].iloc[i] in ["Atelectasis", "Cardiomegaly",  "Effusion", "Infiltration", "Mass", "Nodule", "Pneumonia"]:
 			cnt_private += 1
 
-			if cnt_private <= 2000:
+			if cnt_private <= 2200:
 				if cxr['Finding Labels'].iloc[i] == "Atelectasis":
 					f_private_test.write(entry + ' ' + str(0))
 				elif cxr['Finding Labels'].iloc[i] == "Cardiomegaly":
@@ -206,7 +206,7 @@ def load_cxr_private(base_path):
 					f_private_test.write(entry + ' ' + str(6))
 				f_private_test.write('\n')
 
-			elif 2000 < cnt_private <= 10000:
+			elif 2200 < cnt_private <= 10000:
 			# train
 				if cxr['Finding Labels'].iloc[i] == "Atelectasis":
 					f_private_train.write(entry + ' ' + str(0))
