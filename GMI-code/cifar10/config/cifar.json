@@ -1,0 +1,18 @@
+{
+    "dataset":{
+      "name":"cifar",
+      "gan_file_path":"/home/sichen/mi/GMI-code/cifar10/data/CIFAR_imgs/ganset.txt",
+      "img_path": "/home/sichen/mi/GMI-code/cifar10/data/CIFAR_imgs/",
+      "model_name":"cifar_gan",
+      "mode":"reg",
+      "n_classes":5,
+      "gpus":"4, 5, 6, 7"
+    },
+    "cifar_gan":{
+        "lr": 0.0002,
+        "batch_size": 64,
+        "z_dim": 100,
+        "epochs": 100,
+        "n_critic": 5
+    }
+}
