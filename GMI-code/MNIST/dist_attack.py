@@ -89,6 +89,7 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		if (i+1) % 300 == 0:
 			fake_img = G(z.detach())
 			eval_prob = E(fake_img)[-1]
+			eval_prob = eval_prob[:, :5]
 			eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
 			acc = iden.eq(eval_iden.long()).sum().item() * 1.0 / bs
 			print("Iteration:{}\tPrior Loss:{:.2f}\tIden Loss:{:.2f}\tAttack Acc:{:.2f}".format(i+1, Prior_Loss_val, Iden_Loss_val, acc))
@@ -97,31 +98,38 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 	print("Time:{:.2f}".format(interval))
 	
 	res = []
+	res5 = []
 	for random_seed in range(5):
 		z = reparameterize(mu, log_var)
 		fake = G(z)
 		score = T(fake)[-1]
 		eval_prob = E(fake)[-1]
+		eval_prob = eval_prob[:, :5]
 		eval_iden = torch.argmax(eval_prob, dim=1).view(-1)
 		
-		cnt = 0
+		cnt, cnt5 = 0, 0
 		for i in range(bs):
 			gt = iden[i].item()
+			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
 				max_iden[i] = eval_iden[i]
 				max_prob[i] = eval_prob[i]
 				z_hat[i, :] = z[i, :]
+			'''
 			if eval_iden[i].item() == gt:
 				cnt += 1
 				flag[i] = 1
 				best_img = G(z)[i]
 				save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, i, int(no[i]))))
 				no[i] += 1
-				
+			_, top5_idx = torch.topk(eval_prob[i], 5)
+			if gt in top5_idx:
+				cnt5 += 1
 		
 		print("Seed:{}\tAcc:{:.2f}\t".format(random_seed, cnt * 1.0 / bs))
 		res.append(cnt * 1.0 / bs)
+		res5.append(cnt5 * 1.0 / bs)
 
 		torch.cuda.empty_cache()
 
@@ -139,8 +147,10 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		
 	
 	correct_5 = torch.sum(flag)
-	acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
+	# acc, acc_5, acc_5_prev = correct * 1.0 / bs, cnt5 * 1.0 / bs, correct_5 * 1.0 / bs
 	acc_var = statistics.variance(res)
+	acc, acc_5 = statistics.mean(res), statistics.mean(res5)
+
 	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}".format(acc, acc_5, acc_var))
 	
 	return acc, acc_5, acc_var

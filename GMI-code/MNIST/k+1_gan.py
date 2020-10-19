@@ -60,8 +60,8 @@ utils.Tee(os.path.join(log_path, log_file), 'w')
 
 
 if __name__ == "__main__":
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-    os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
     global args, writer
     
     file = "./config/" + dataset_name + ".json"
@@ -165,8 +165,8 @@ if __name__ == "__main__":
 
                 # Hloss = entropy(T(f_imgs)[-1])
                 Hloss = entropy(output_fake)
-                # g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
-                g_loss = torch.mean((mom_gen - mom_unlabel).abs())
+                g_loss = torch.mean((mom_gen - mom_unlabel).abs()) + 1e-4 * Hloss  # feature matching loss
+                # g_loss = torch.mean((mom_gen - mom_unlabel).abs())
                 # import pdb; pdb.set_trace()
 
                 
@@ -181,8 +181,8 @@ if __name__ == "__main__":
         
         print("Epoch:%d \tTime:%.2f\tG_loss:%.2f\t train_acc:%.2f" % (epoch, interval, g_loss, acc))
 
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_G.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_D.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_G_entropy.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "improved_mb_mnist_D_entropy.tar"))
 
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()

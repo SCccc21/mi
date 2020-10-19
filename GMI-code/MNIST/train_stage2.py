@@ -33,27 +33,25 @@ def get_logger():
 
 
 if __name__ == "__main__":
-	# os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-	os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+	os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+	# os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
 	global logger
 	logger = get_logger()
 	dataset_name = "mnist"
-	improved_flag = False
+	improved_flag = True
 
 	
 	print("Using improved GAN:", improved_flag)
    
 	z_dim = 100
 
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_mnist_G.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_mnist_D.tar'
+	path_G = '/home/sichen/models/improvedGAN/improved_mb_mnist_G_entropy.tar'
+	path_D = '/home/sichen/models/improvedGAN/improved_mb_mnist_D_entropy.tar'
 	
-	path_G = './Attack/attack_models/MNIST_G.tar'
-	path_D = './Attack/attack_models/MNIST_D.tar'
+	# path_G = './Attack/attack_models/MNIST_G.tar'
+	# path_D = './Attack/attack_models/MNIST_D.tar'
 
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy2.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy2.tar'
 	path_T = '/home/sichen/models/target_model/target_ckp/mnist_cnn_target_99.94.tar'
 	path_E = '/home/sichen/models/target_model/target_ckp/mnist_cnn_eval_99.35.tar'
 
@@ -92,14 +90,14 @@ if __name__ == "__main__":
 	aver_acc, aver_acc5, aver_var = 0, 0, 0
 	
 
-	for i in range(10):
+	for i in range(5):
 		print('-------------------------')
 		iden = torch.from_numpy(np.arange(5))
-		acc, acc5, var = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-		# acc, acc5, var = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-		aver_acc += acc / 10
-		aver_acc5 += acc5 / 10
-		aver_var += var / 10
+		# acc, acc5, var = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
+		acc, acc5, var = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
+		aver_acc += acc / 5
+		aver_acc5 += acc5 / 5
+		aver_var += var / 5
 
 	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}".format(aver_acc, aver_acc5, aver_var))
 

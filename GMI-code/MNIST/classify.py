@@ -31,7 +31,7 @@ class Mnist_CNN(nn.Module):
         return [x, res]
 
 class MCNN(nn.Module):# target
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=5):
         super(MCNN, self).__init__()
         self.feat_dim = 256
         self.num_classes = num_classes
