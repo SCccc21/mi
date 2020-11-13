@@ -103,6 +103,8 @@ def test(model, attr_acc, attr_name=attributes, testloader):
         print('Attribute: %s, Accuracy: %.3f' % (attr_name[i], attr_acc[i]))
 
 def main():
+    trainloader, validloader, testloader = load_attri()
+
 	# define empty list to store the losses and accuracy for ploting
 	train_all_losses2 = []
 	train_all_acc2 = []
@@ -126,11 +128,11 @@ def main():
 	best_acc = 0.0
 
 	for epoch in range(epochs):
-	    train(mobilenet, epoch, train_all_losses2, train_all_acc2)
-	    acc = validation(mobilenet, val_all_losses2, val_all_acc2, best_acc)
+	    train(mobilenet, epoch, train_all_losses2, train_all_acc2, trainloader)
+	    acc = validation(mobilenet, val_all_losses2, val_all_acc2, best_acc, validloader)
 	    # record the best model
 	    if acc > best_acc:
-	      checkpoint_path = './model_checkpoint.pth'
+	      checkpoint_path = './attribute/model_checkpoint.pth'
 	      best_acc = acc
 	      # save the model and optimizer
 	      torch.save({'model_state_dict': mobilenet.state_dict(),

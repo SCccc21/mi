@@ -218,18 +218,6 @@ def train_test_split_new(base_path):
             f_train.write(img_name + ' ' + str(new_label))
             f_train.write("\n")
 
-def get_attri(file_path):
-    att_path = '/home/sichen/data/list_attr_celeba.txt'
-    att_list = open(att_path).readlines()[2:] # start from 2nd row
-    data_label = []
-    for i in range(len(att_list)):
-        data_label.append(att_list[i].split())
-
-    # transform label into 0 and 1
-    for m in range(len(data_label)):
-        data_label[m] = [n.replace('-1', '0') for n in data_label[m]][1:]
-        data_label[m] = [int(p) for p in data_label[m]]
-
 
 def new_gan(base_path):
     gan_path = os.path.join(base_path, 'ganset_new.txt')
