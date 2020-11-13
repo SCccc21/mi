@@ -3,6 +3,8 @@ import numpy as np
 import torch.nn as nn
 from copy import deepcopy
 from torch.optim.lr_scheduler import MultiStepLR
+root_path = "/home/sichen/models/target_model"
+model_path = os.path.join(root_path, "target_ckp")
 
 device = "cuda"
 
@@ -64,7 +66,7 @@ def train_reg(args, model, criterion, optimizer, trainloader, testloader, n_epoc
             best_ACC = test_acc
             best_model = deepcopy(model)
 
-        if (epoch+1) % 20 == 0:
+        if (epoch+1) % 10 == 0:
             torch.save({'state_dict':model.state_dict()}, os.path.join(model_path, "allclass_epoch{}.tar").format(epoch))
 
         print("Epoch:{}\tTime:{:.2f}\tTrain Loss:{:.2f}\tTrain Acc:{:.2f}\tTest Acc:{:.2f}".format(epoch, interval, train_loss, train_acc, test_acc))

@@ -200,7 +200,7 @@ def load_mnist():
         img_name = str(cnt) + '_' + str(labels.item()) + '.png'
         # utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
 
-data_path
+
 
 if __name__ == "__main__":
     load_mnist()
