@@ -8,10 +8,11 @@ from torch.autograd import Variable
 import torch.optim as optim
 import torch.autograd as autograd
 import statistics 
+import torch.distributions as tdist
 
 device = "cuda"
 num_classes = 1000
-save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/fid_dist_ffhq_mb_entropy'
+save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/dist_entropy_ir152'
 os.makedirs(save_img_dir, exist_ok=True)
 
 def reparameterize(mu, logvar):
@@ -23,7 +24,10 @@ def reparameterize(mu, logvar):
 	:return: (Tensor) [B x D]
 	"""
 	std = torch.exp(0.5 * logvar)
+	# gaussian = tdist.normal.Normal(0, 5)
+	# eps = gaussian.sample(std.size())
 	eps = torch.randn_like(std)
+
 	return eps * std + mu
 
 
@@ -73,6 +77,8 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		else:
 			Prior_Loss = - label.mean()
 		Iden_Loss = criterion(out, iden)
+		# Diversity_Loss = - torch.mean((torch.exp(0.5 * log_var)) ** 2)
+		# import pdb; pdb.set_trace()
 
 		Total_Loss = Prior_Loss + lamda * Iden_Loss
 		# import pdb; pdb.set_trace()
@@ -108,6 +114,9 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		cnt, cnt5 = 0, 0
 		for i in range(bs):
 			gt = iden[i].item()
+			# sample = G(z)[i]
+			# save_tensor_images(sample.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, gt+1, int(no[i]))))
+			# no[i] += 1
 			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
@@ -118,8 +127,8 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 			if eval_iden[i].item() == gt:
 				cnt += 1
 				# flag[i] = 1
-				# best_img = G(z)[i]
-				# save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
+				best_img = G(z)[i]
+				save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
 				no[i] += 1
 			_, top5_idx = torch.topk(eval_prob[i], 5)
 			if gt in top5_idx:
@@ -149,6 +158,7 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 	
 	acc, acc_5 = statistics.mean(res), statistics.mean(res5)
 	acc_var = statistics.variance(res)
-	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}".format(acc, acc_5, acc_var))
+	acc_var5 = statistics.variance(res5)
+	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}\tAcc_var5:{:.4f}".format(acc, acc_5, acc_var, acc_var5))
 	
-	return acc, acc_5, acc_var
+	return acc, acc_5, acc_var, acc_var5

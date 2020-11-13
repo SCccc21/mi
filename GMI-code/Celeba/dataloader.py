@@ -31,7 +31,7 @@ class ImageFolder(data.Dataset):
         self.image_list = self.load_img()
         self.num_img = len(self.image_list)
         self.n_classes = args["dataset"]["n_classes"]
-        print("Load " + str(self.num_img) + " images")
+        # print("Load " + str(self.num_img) + " images")
 
     
     def get_list(self, file_path):
@@ -61,7 +61,7 @@ class ImageFolder(data.Dataset):
     
     
     def get_processor(self):
-        if self.model_name == "FaceNet":
+        if self.model_name in ("FaceNet", "FaceNet_all"):
             re_size = 112
         else:
             re_size = 64
@@ -69,6 +69,11 @@ class ImageFolder(data.Dataset):
         crop_size = 108
         offset_height = (218 - crop_size) // 2
         offset_width = (178 - crop_size) // 2
+
+        #NOTE: dataset face scrub
+        # crop_size = 54
+        # offset_height = (64 - crop_size) // 2 
+        # offset_width = (64 - crop_size) // 2
 
         #NOTE: dataset ffhq
         # crop_size = 88
@@ -194,6 +199,8 @@ def load_mnist():
         cnt += 1
         img_name = str(cnt) + '_' + str(labels.item()) + '.png'
         # utils.save_tensor_images(imgs, os.path.join(mnist_img_path, img_name))
+
+data_path
 
 if __name__ == "__main__":
     load_mnist()

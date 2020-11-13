@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 # check, if file exists, make link
 def check_link(in_dir, basename, out_dir):
@@ -123,6 +124,144 @@ def getListOfFiles(f, dirName):
     return allFiles
 
 
+def find(img_name):
+    datafile = open('/home/sichen/data/identity_CelebA.txt', "r")
+    for line in datafile.readlines():
+        # import pdb; pdb.set_trace()
+        if img_name in line:
+            img_name, iden = line.strip().split(' ')
+            return iden
+    print("{} not found!".format(img_name))
+
+
+def find_match():
+    match = []
+    datafile = open('/home/sichen/data/testset.txt', "r")
+    mark = 2000000
+    for line in datafile.readlines():
+        img_name, label = line.strip().split(' ')
+        if label == mark:
+            continue
+        mark = label  
+        origin_iden = find(img_name)
+        match.append(int(origin_iden) - 1) 
+        
+    print(match)
+    return match
+
+def train_test_split(base_path):
+    match_list = find_match() # both key and value use 0 version
+
+    NUM_EXAMPLES = 202599
+    TRAIN_STOP = 162770
+    VALID_STOP = 182637
+    
+    train_path = os.path.join(base_path, 'train_all.txt')
+    val_path = os.path.join(base_path, 'val_all.txt')
+    test_path = os.path.join(base_path, 'test_all.txt')
+    f_train = open(train_path, "w")
+    f_val = open(val_path, "w")
+    f_test = open(test_path, "w")
+
+    for i in range(0, NUM_EXAMPLES):
+        img_name = "{:06d}.png".format(i+1)
+        print(img_name)
+        iden = find(img_name) # iden is 1 version
+        label = int(iden) - 1
+        if 0 <= label <= 999:
+            new_label = match_list[label]
+            print("{} changed from {} to {}".format(img_name, label, new_label))
+        elif label in match_list:
+            new_label = match_list.index(label)
+            print("{} changed from {} to {}".format(img_name, label, new_label))
+        else:
+            new_label = label
+        
+        if i in range(0, TRAIN_STOP):
+            f_train.write(img_name + ' ' + str(new_label))
+            f_train.write("\n")
+        if i in range(TRAIN_STOP, VALID_STOP):
+            f_val.write(img_name + ' ' + str(new_label))
+            f_val.write("\n")
+        if i in range(VALID_STOP, NUM_EXAMPLES):
+            f_test.write(img_name + ' ' + str(new_label))
+            f_test.write("\n")
+
+
+def train_test_split_new(base_path):
+    f = open('/home/sichen/data/identity_CelebA.txt', "r")
+    match_list = find_match() # both key and value use 0 version
+    
+    train_path = os.path.join(base_path, 'train_all_new.txt')
+    val_path = os.path.join(base_path, 'val_all_new.txt')
+    f_train = open(train_path, "w")
+    f_val = open(val_path, "w")
+    cnt = np.zeros(10177)
+
+    for line in f.readlines():
+        img_name, iden = line.strip().split(' ')
+        print(img_name)
+        label = int(iden)-1
+        if 0 <= label <= 999:
+            new_label = match_list[label]
+            print("{} changed from {} to {}".format(img_name, label, new_label))
+        elif label in match_list:
+            new_label = match_list.index(label)
+            print("{} changed from {} to {}".format(img_name, label, new_label))
+        else:
+            new_label = label
+        cnt[new_label] += 1
+        if cnt[new_label] < 4:
+            f_val.write(img_name + ' ' + str(new_label))
+            f_val.write("\n")
+        else:
+            f_train.write(img_name + ' ' + str(new_label))
+            f_train.write("\n")
+
+def get_attri(file_path):
+    att_path = '/home/sichen/data/list_attr_celeba.txt'
+    att_list = open(att_path).readlines()[2:] # start from 2nd row
+    data_label = []
+    for i in range(len(att_list)):
+        data_label.append(att_list[i].split())
+
+    # transform label into 0 and 1
+    for m in range(len(data_label)):
+        data_label[m] = [n.replace('-1', '0') for n in data_label[m]][1:]
+        data_label[m] = [int(p) for p in data_label[m]]
+
+
+def new_gan(base_path):
+    gan_path = os.path.join(base_path, 'ganset_new.txt')
+    train_path = os.path.join(base_path, 'train_pub.txt')
+    test_path = os.path.join(base_path, 'test_pub.txt')
+    all_file_path = os.path.join(base_path, 'identity_CelebA.txt')
+    f = open(all_file_path, "r")
+    f_gan = open(gan_path, "w")
+    f_train = open(train_path, "w")
+    f_test = open(test_path, "w")
+    cnt = np.zeros(2000)  #2000 identities in total
+
+    for line in f.readlines():
+        img_name, iden = line.strip().split(' ')
+        # import pdb; pdb.set_trace()
+        if 1000 < int(iden) < 3001:
+            label = int(iden) - 1
+            name = os.path.splitext(img_name)[0]+ '.png' 
+            f_gan.write(name)
+            f_gan.write("\n")
+            if cnt[label-1000] < 2:
+                cnt[label-1000] += 1
+                f_test.write(name + ' ' + str(label))
+                f_test.write("\n")
+            else:
+                f_train.write(name + ' ' + str(label))
+                f_train.write("\n")
+
+    f_gan.close()
+    f_train.close()
+    f_test.close()
+
 def mnist_split(base_path):
     public_path = os.path.join(base_path, 'ganset.txt')
     private_train = os.path.join(base_path, 'train.txt')
@@ -162,19 +301,35 @@ def mnist_split(base_path):
                     f_public.write(entry)
                     f_public.write('\n')
 
+def facescrub(base_path):
+    public_path = os.path.join('./feat', 'dist_h.txt')
+    f_public = open(public_path, "w")
+
+    listOfFile = os.listdir(base_path)
+    for entry in listOfFile:
+        if entry.endswith('.png'):
+            f_public.write(entry)
+            f_public.write('\n')
+
+
+
  
 if __name__ == '__main__':
     # base_path = '/home/sichen/data'
     # public_private_splits(base_path)
     # base_path = '/home/sichen/data/pf83_fixed'
-    base_path = '/home/sichen/data/MNIST_imgs'
-    no = 0
+    # base_path = '/home/sichen/data/MNIST_imgs'
+    # no = 0
     
     # for i in range(30):
     #     foldername = str(no).zfill(5)
     #     no += 1000
     #     combine(f, foldername, base_path)
 
-    mnist_split(base_path)
+    # mnist_split(base_path)
 
     # f.close()
+    # base_path = '/home/sichen/data/facescrub/imgs'
+    # base_path = '/home/sichen/mi/GMI-code/Celeba/fid/fid_dist_entropy'
+    # facescrub(base_path)
+    train_test_split_new('/home/sichen/data')

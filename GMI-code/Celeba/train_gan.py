@@ -44,11 +44,11 @@ dataset_name = "celeba"
 
 log_path = "./attack_logs"
 os.makedirs(log_path, exist_ok=True)
-log_file = "ffhq_GAN.txt"
+log_file = "GAN_scrub.txt"
 utils.Tee(os.path.join(log_path, log_file), 'w')
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4,5,6,7'
     
     file = "./config/" + dataset_name + ".json"
     args = load_json(json_file=file)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
         if (epoch+1) % 10 == 0:
             z = torch.randn(32, z_dim).cuda()
             fake_image = G(z)
-            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}_ffhq.png".format(epoch)), nrow = 8)
+            save_tensor_images(fake_image.detach(), os.path.join(save_img_dir, "result_image_{}_scrub.png".format(epoch)), nrow = 8)
         
-        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G_ffhq.tar"))
-        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D_ffhq.tar"))
+        torch.save({'state_dict':G.state_dict()}, os.path.join(save_model_dir, "celeba_G_scrub.tar"))
+        torch.save({'state_dict':DG.state_dict()}, os.path.join(save_model_dir, "celeba_D_scrub.tar"))

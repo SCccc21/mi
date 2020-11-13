@@ -14,7 +14,7 @@ import time
 import random
 import os, logging
 import numpy as np
-from attack import inversion, inversion_grad_constraint, natural_grad
+from attack import inversion
 from dist_attack import dist_inversion
 from generator import Generator
 
@@ -33,15 +33,15 @@ def get_logger():
 
 
 if __name__ == "__main__":
-	os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1, 2, 3'
-	# os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
+	# os.environ["CUDA_VISIBLE_DEVICES"] = '1, 2, 3'
+	os.environ["CUDA_VISIBLE_DEVICES"] = '4, 5, 6, 7'
 
 	global args, logger
 	logger = get_logger()
-	model_name_T = "VGG16"
+	model_name_T = "IR152"
 	model_name_E = "FaceNet"
 	dataset_name = "celeba"
-	improved_flag = False
+	improved_flag = True
 
 	file = "./config/attack" + ".json"
 	args = load_json(json_file=file)
@@ -52,17 +52,27 @@ if __name__ == "__main__":
 
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0715.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0715.tar'
+	
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy2.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy2.tar'
 	
-	path_G = '/home/sichen/models/GAN/celeba_G.tar'
-	path_D = '/home/sichen/models/GAN/celeba_D.tar'
-	# path_G = '/home/sichen/models/GAN/celeba_G_ffhq.tar'
-	# path_D = '/home/sichen/models/GAN/celeba_G_ffhq.tar'
+	# path_G = '/home/sichen/models/GAN/celeba_G.tar'
+	# path_D = '/home/sichen/models/GAN/celeba_D.tar'
+	# path_G = '/home/sichen/models/GAN/celeba_G_scrub.tar'
+	# path_D = '/home/sichen/models/GAN/celeba_D_scrub.tar'
+
+	#NOTE: IR152
+	path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_IR152_entropy.tar'
+	path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_IR152_entropy.tar'
+	#NOTE: Facenet64
+	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_facenet_entropy_55.tar'
+	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_facenet_entropy_55.tar'
 
 	
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_ffhq_entropy.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_ffhq_entropy.tar'
+	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_facenet_entropy_scrub_48.tar'
+	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_facenet_entropy_scrub_48.tar'
 	path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 
 	###########################################
@@ -114,20 +124,21 @@ if __name__ == "__main__":
 	logger.info("=> Begin attacking ...")
 
 
-	aver_acc, aver_acc5, aver_var = 0, 0, 0
+	aver_acc, aver_acc5, aver_var, aver_var5 = 0, 0, 0, 0
 	# no auxilary
-	for i in range(5):
+	for i in range(3):
 		iden = torch.from_numpy(np.arange(60))
 
 		for idx in range(5):
 			print("--------------------- Attack batch [%s]------------------------------" % idx)
-			acc, acc5, var = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-			# acc, acc5, var = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=5)
+			# acc, acc5, var, var5 = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
+			acc, acc5, var, var5 = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=5)
 			iden = iden + 60
-			aver_acc += acc / 25
-			aver_acc5 += acc5 / 25
-			aver_var += var / 25
+			aver_acc += acc / 15
+			aver_acc5 += acc5 / 15
+			aver_var += var / 15
+			aver_var5 += var5 / 15
 
-	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}".format(aver_acc, aver_acc5, aver_var))
+	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}\tAverage Acc_var5:{:.4f}".format(aver_acc, aver_acc5, aver_var, aver_var5))
 
 	

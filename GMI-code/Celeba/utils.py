@@ -300,13 +300,13 @@ def low2high(img):
     return img
 
 def calc_feat(img):
-    I = IR_50((112, 112))
-    BACKBONE_RESUME_ROOT = "./feature/ir50.pth"
+    I = FaceNet(1000)
+    BACKBONE_RESUME_ROOT = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
     print("Loading Backbone Checkpoint ")
     I.load_state_dict(torch.load(BACKBONE_RESUME_ROOT))
     I = torch.nn.DataParallel(I).cuda()
     img = low2high(img)
-    feat = I(img)
+    feat, res = I(img)
     return feat
 
 def get_model(attack_name, classes):
@@ -360,19 +360,19 @@ def calc_center(feat, iden, path="feature"):
 def calc_knn(feat, iden, path="feature"):
     iden = iden.cpu().long()
     feat = feat.cpu()
-    feats = torch.from_numpy(np.load(os.path.join(path, "feat.npy"))).float()
+    true_feat = torch.from_numpy(np.load(os.path.join(path, "feat.npy"))).float()
     info = torch.from_numpy(np.load(os.path.join(path, "info.npy"))).view(-1).long()
     bs = feat.size(0)
-    tot = feats.size(0)
+    tot = true_feat.size(0)
     knn_dist = 0
     for i in range(bs):
         knn = 1e8
         for j in range(tot):
             if info[j] == iden[i]:
-                dist = torch.sum((feat[i, :] - feats[j, :]) ** 2)
+                dist = torch.sum((feat[i, :] - true_feat[j, :]) ** 2)
                 knn = min(knn, dist)
         knn_dist += knn
-    return knn_dist / bs
+    return (knn_dist / bs).item()
 
 
 def log_sum_exp(x, axis = 1):

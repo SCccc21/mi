@@ -31,13 +31,21 @@ if __name__ == '__main__':
     file = "./config/classify.json"
     args = load_json(json_file=file)
     file_path = '/home/sichen/mi/GMI-code/Celeba/fid/private_list.txt'
-    save_img_dir = "./fid/private_domain"
+    save_img_dir = "./fid/private_domain_new"
     os.makedirs(save_img_dir, exist_ok=True)
 
-    private_set, private_loader = init_dataloader(args, file_path, mode="train")
+    private_set, private_loader = init_dataloader(args, file_path, batch_size=1, mode="attack", iterator=False)
+    # cnt = 0
+    # for i, (imgs, iden) in enumerate(private_loader):
+    #     print("-------------- Process batch {} -----------------".format(i))
+    #     for b in range(imgs.shape[0]):
+    #         cnt += 1
+    #         save_tensor_images(imgs[b], os.path.join(save_img_dir, "batch_{}_{}th_iden_{}.png".format(i, b, iden[b]+1)))
+    #         if iden[b] == 299:
+    #             print("Last person!")
+    #         # print("save image of iden {}".format(iden[b]+1))
 
+    # print(cnt)
     for i, (imgs, iden) in enumerate(private_loader):
-        print("-------------- Process batch {} -----------------".format(i))
-        for b in range(imgs.shape[0]):
-            save_tensor_images(imgs[b], os.path.join(save_img_dir, "iden_{}.png".format(iden[b]+1)))
-            print("save image of iden {}".format(iden[b]+1))
+        print("save {} image of iden {}".format(i, iden[0]+1))
+        save_tensor_images(imgs, os.path.join(save_img_dir, "{}th_iden_{}.png".format(i, iden[0]+1)))

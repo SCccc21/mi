@@ -20,6 +20,7 @@ def test(model, criterion, dataloader):
         out_iden = torch.argmax(out_prob, dim=1).view(-1)
         ACC += torch.sum(iden == out_iden).item()
         cnt += bs
+        # import pdb; pdb.set_trace()
 
     return ACC * 100.0 / cnt
 
@@ -62,7 +63,10 @@ def train_reg(args, model, criterion, optimizer, trainloader, testloader, n_epoc
         if test_acc > best_ACC:
             best_ACC = test_acc
             best_model = deepcopy(model)
-            
+
+        if (epoch+1) % 20 == 0:
+            torch.save({'state_dict':model.state_dict()}, os.path.join(model_path, "allclass_epoch{}.tar").format(epoch))
+
         print("Epoch:{}\tTime:{:.2f}\tTrain Loss:{:.2f}\tTrain Acc:{:.2f}\tTest Acc:{:.2f}".format(epoch, interval, train_loss, train_acc, test_acc))
         #scheduler.step()
 

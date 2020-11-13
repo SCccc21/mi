@@ -8,11 +8,11 @@ import statistics
 
 device = "cuda"
 num_classes = 1000
-save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/fid_origin_ir152'
+save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/origin_ir152'
 os.makedirs(save_img_dir, exist_ok=True)
 
 
-def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False):
+def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=False, num_seeds=5):
 	iden = iden.view(-1).long().cuda()
 	criterion = nn.CrossEntropyLoss().cuda()
 	bs = iden.shape[0]
@@ -31,7 +31,7 @@ def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_time
 
 	res = []
 	res5 = []
-	for random_seed in range(5):
+	for random_seed in range(num_seeds):
 		tf = time.time()
 		r_idx = random_seed
 		torch.manual_seed(random_seed) 
@@ -94,6 +94,9 @@ def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_time
 		cnt, cnt5 = 0, 0
 		for i in range(bs):
 			gt = iden[i].item()
+			# sample = G(z)[i]
+			# save_tensor_images(sample.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
+			# no[i] += 1
 			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
@@ -105,7 +108,7 @@ def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_time
 				cnt += 1
 				flag[i] = 1
 				best_img = G(z)[i]
-				# save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
+				save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
 				no[i] += 1
 			_, top5_idx = torch.topk(eval_prob[i], 5)
 			if gt in top5_idx:
@@ -138,9 +141,10 @@ def inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter_time
 	'''
 	acc, acc_5 = statistics.mean(res), statistics.mean(res5)
 	acc_var = statistics.variance(res)
-	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}".format(acc, acc_5, acc_var))
+	acc_var5 = statistics.variance(res5)
+	print("Acc:{:.2f}\tAcc_5:{:.2f}\tAcc_var:{:.4f}\tAcc_var5:{:.4f}".format(acc, acc_5, acc_var, acc_var5))
 	
-	return acc, acc_5, acc_var
+	return acc, acc_5, acc_var, acc_var5
 
 
 def natural_grad(G, D, T, E, iden, lr=2e-2, momentum=0.9, lamda=100, lamda2=10, iter_times=1500, clip_range=1, improved=False):
