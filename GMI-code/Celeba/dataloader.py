@@ -268,5 +268,5 @@ def load_attri(file_path):
 
 
 if __name__ == "__main__":
-	# load_attri()
+	load_300attri()
 	print("ok")

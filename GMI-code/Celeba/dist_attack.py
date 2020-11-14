@@ -116,7 +116,7 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		for i in range(bs):
 			gt = iden[i].item()
 			sample = fake[i]
-			save_tensor_images(sample.detach(), os.path.join(save_img_dir, "attack_iden_{}_{}.png".format(gt+1, random_seed)))
+			# save_tensor_images(sample.detach(), os.path.join(save_img_dir, "attack_iden_{}_{}.png".format(gt+1, random_seed)))
 			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]

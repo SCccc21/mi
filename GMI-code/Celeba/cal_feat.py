@@ -145,7 +145,7 @@ def save_public_knn(I):
 	knn = torch.zeros(30000, 512)
 	info = torch.zeros(30000)
 	idx = 0
-	for line in datafile.readlines()
+	for line in datafile.readlines():
 		img_name = line.strip()
 		img = Image.open("/home/sichen/data/img_align_celeba_png/" + img_name)
 		img = TF.to_tensor(img)
@@ -196,46 +196,88 @@ def psnr(img1, img2):
 	mse = torch.mean((img1 - img2) ** 2)
 	return 20 * torch.log10(255.0 / torch.sqrt(mse))
 
+def acc_attri300(attack_path):
+	att_path = './attribute/300attri.txt'
+	att_list = open(att_path).readlines() 
+	listOfFile = os.listdir(attack_path)
+	#load model
+	model_path = './attribute/model_checkpoint_nopretrain.pth'
+	
+	model = MobileNet()
+	model = torch.nn.DataParallel(model).to('cuda')
+	ckp_E = torch.load(model_path)
+	model.load_state_dict(ckp_E['model_state_dict'], strict=False)
+	model.eval()
+
+	correct = np.zeros(40)
+	cnt = 0
+	for entry in listOfFile:
+		if entry.endswith('.png'):
+			cnt += 1
+			# img
+			img = Image.open(attack_path+entry)
+			img = TF.to_tensor(img)
+
+			# label
+			idx, _, _, label, seed = os.path.splitext(entry)[0].strip().split('_')
+			iden = int(label) - 1
+			data_label = att_list[iden].split()
+			data_label = data_label[2:]
+			data_label = [int(p) for p in data_label]
+
+			img = img.cuda()
+			data_label = data_label.cuda()
+			output = model(low2high(img))
+			result = output > 0.5
+			for i in range(40):
+				correct[i] += (result[i] == data_label[i]).item()
+			
+	acc = correct / cnt
+	print("Attribute acc:", 100. * acc)
+	return acc
+
 if __name__ == '__main__':
 	os.environ["CUDA_VISIBLE_DEVICES"] = '4,5,6,7'
 
-	I = FaceNet(1000)
-	ckp = torch.load('/home/sichen/models/target_model/backbone_ir50_ms1m_epoch120.pth')
-	load_state_dict(I.feature, ckp)
-	I = torch.nn.DataParallel(I).cuda()
-	I.eval()
+	# I = FaceNet(1000)
+	# ckp = torch.load('/home/sichen/models/target_model/backbone_ir50_ms1m_epoch120.pth')
+	# load_state_dict(I.feature, ckp)
+	# I = torch.nn.DataParallel(I).cuda()
+	# I.eval()
 	
-	print("Loading Backbone Checkpoint ")
-	# I.load_state_dict(ckp['state_dict'], strict=False)
-	# save_center(I)
-	save_knn(I)
+	# print("Loading Backbone Checkpoint ")
+	# # I.load_state_dict(ckp['state_dict'], strict=False)
+	# # save_center(I)
+	# save_knn(I)
+	'''
+	path = './feat/origin/'
+	center_dist, feat_ori = get_knn_dist(path, I)
+	print("origin center dist:", center_dist)
 
-	# path = './feat/origin/'
-	# center_dist, feat_ori = get_knn_dist(path, I)
-	# print("origin center dist:", center_dist)
+	path = './feat/mb/'
+	center_dist , feat_mb = get_knn_dist(path, I)
+	print("mb center dist:", center_dist)
 
-	# path = './feat/mb/'
-	# center_dist , feat_mb = get_knn_dist(path, I)
-	# print("mb center dist:", center_dist)
+	# print(feat_ori - feat_mb)
 
-	# # print(feat_ori - feat_mb)
+	path = './feat/mb_h/'
+	center_dist, _ = get_knn_dist(path, I)
+	print("mb+h center dist:", center_dist)
 
-	# path = './feat/mb_h/'
-	# center_dist, _ = get_knn_dist(path, I)
-	# print("mb+h center dist:", center_dist)
+	path = './feat/dist_mb/'
+	center_dist, _ = get_knn_dist(path, I)
+	print("mb+dist center dist:", center_dist)
 
-	# path = './feat/dist_mb/'
-	# center_dist, _ = get_knn_dist(path, I)
-	# print("mb+dist center dist:", center_dist)
+	path = './feat/dist_mb_h/'
+	center_dist, _ = get_knn_dist(path, I)
+	print("mb+dist+h center dist:", center_dist)
+	'''
 
-	# path = './feat/dist_mb_h/'
-	# center_dist, _ = get_knn_dist(path, I)
-	# print("mb+dist+h center dist:", center_dist)
-
-	path = './fid/fid_origin/'
-	dist, _ = get_knn_dist(path, I) 
-	print("origin knn:", dist)
+	# path = './fid/fid_origin/'
+	# dist, _ = get_knn_dist(path, I) 
+	# print("origin knn:", dist)
 	
-	path = './fid/fid_dist_entropy/'
-	dist, _ = get_knn_dist(path, I) 
-	print("our knn:", dist)
+	# path = './fid/fid_dist_entropy/'
+	# dist, _ = get_knn_dist(path, I) 
+	# print("our knn:", dist)
+	acc_attri300('./fid/fid_dist_entropy/')

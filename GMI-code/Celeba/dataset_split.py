@@ -133,6 +133,14 @@ def find(img_name):
             return iden
     print("{} not found!".format(img_name))
 
+def find_iden(iden):
+    datafile = open('/home/sichen/data/testset.txt', "r")
+    for line in datafile.readlines():
+        # import pdb; pdb.set_trace()
+        img_name, label = line.strip().split(' ')
+        if iden == int(label):
+            return img_name
+    print("{} not found!".format(iden))
 
 def find_match():
     match = []
@@ -145,9 +153,28 @@ def find_match():
         mark = label  
         origin_iden = find(img_name)
         match.append(int(origin_iden) - 1) 
-        
+    #NOTE    
     print(match)
     return match
+
+def get_300_attri():
+    att_path = '/home/sichen/data/list_attr_celeba.txt'
+    att_list = open(att_path).readlines()[2:] # start from 2nd row
+    f_attri = open('./attribute/300attri.txt', "w")
+
+    for i in range(300):
+        img_name = find_iden(i)
+        img_idx = int(os.path.splitext(img_name)[0])
+        attri = att_list[img_idx-1]
+        # import pdb; pdb.set_trace()
+        line = str(i) + ' ' + attri 
+        print(line)
+        f_attri.write(line)
+        # import pdb; pdb.set_trace()
+
+    f_attri.close()
+    
+
 
 def train_test_split(base_path):
     match_list = find_match() # both key and value use 0 version
@@ -320,4 +347,5 @@ if __name__ == '__main__':
     # base_path = '/home/sichen/data/facescrub/imgs'
     # base_path = '/home/sichen/mi/GMI-code/Celeba/fid/fid_dist_entropy'
     # facescrub(base_path)
-    train_test_split_new('/home/sichen/data')
+    # train_test_split_new('/home/sichen/data')
+    get_300_attri()

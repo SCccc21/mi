@@ -38,8 +38,7 @@ if __name__ == "__main__":
 
 	global args, logger
 	logger = get_logger()
-	model_name_T = "IR152"
-	model_name_E = "FaceNet"
+	model_name_T = "VGG16"
 	dataset_name = "celeba"
 	improved_flag = True
 
@@ -50,8 +49,8 @@ if __name__ == "__main__":
    
 	z_dim = 100
 
-	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0715.tar'
-	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0715.tar'
+	path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_0715.tar'
+	path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_0715.tar'
 	
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_entropy2.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_entropy2.tar'
@@ -62,8 +61,8 @@ if __name__ == "__main__":
 	# path_D = '/home/sichen/models/GAN/celeba_D_scrub.tar'
 
 	#NOTE: IR152
-	path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_IR152_entropy.tar'
-	path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_IR152_entropy.tar'
+	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_IR152_entropy.tar'
+	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_IR152_entropy.tar'
 	#NOTE: Facenet64
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_facenet_entropy_55.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_facenet_entropy_55.tar'
@@ -73,6 +72,7 @@ if __name__ == "__main__":
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_ffhq_entropy.tar'
 	# path_G = '/home/sichen/models/improvedGAN/improved_mb_celeba_G_facenet_entropy_scrub_48.tar'
 	# path_D = '/home/sichen/models/improvedGAN/improved_mb_celeba_D_facenet_entropy_scrub_48.tar'
+	# path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 	path_E = '/home/sichen/models/target_model/target_ckp/FaceNet_95.88.tar'
 
 	###########################################
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 		for idx in range(5):
 			print("--------------------- Attack batch [%s]------------------------------" % idx)
 			# acc, acc5, var, var5 = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
-			acc, acc5, var, var5 = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=5)
+			acc, acc5, var, var5 = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1800, clip_range=1, improved=improved_flag, num_seeds=5)
 			iden = iden + 60
 			aver_acc += acc / 5
 			aver_acc5 += acc5 / 5
