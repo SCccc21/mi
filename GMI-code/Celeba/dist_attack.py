@@ -12,7 +12,8 @@ import torch.distributions as tdist
 
 device = "cuda"
 num_classes = 1000
-save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/dist_entropy_ir152'
+save_img_dir = '/home/sichen/mi/GMI-code/Celeba/fid/all_' # all attack imgs
+# success_dir = '/home/sichen/mi/GMI-code/Celeba/fid/dist_entropy_ir152'
 os.makedirs(save_img_dir, exist_ok=True)
 
 def reparameterize(mu, logvar):
@@ -114,9 +115,8 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 		cnt, cnt5 = 0, 0
 		for i in range(bs):
 			gt = iden[i].item()
-			# sample = G(z)[i]
-			# save_tensor_images(sample.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, gt+1, int(no[i]))))
-			# no[i] += 1
+			sample = fake[i]
+			save_tensor_images(sample.detach(), os.path.join(save_img_dir, "attack_iden_{}_{}.png".format(gt+1, random_seed)))
 			'''
 			if score[i, gt].item() > max_score[i].item():
 				max_score[i] = score[i, gt]
@@ -128,7 +128,7 @@ def dist_inversion(G, D, T, E, iden, itr, lr=2e-2, momentum=0.9, lamda=100, iter
 				cnt += 1
 				# flag[i] = 1
 				best_img = G(z)[i]
-				save_tensor_images(best_img.detach(), os.path.join(save_img_dir, "{}_attack_iden_{}_{}.png".format(itr, iden[0]+i+1, int(no[i]))))
+				# save_tensor_images(best_img.detach(), os.path.join(success_dir, "{}_attack_iden_{}_{}.png".format(itr, gt+1, int(no[i]))))
 				no[i] += 1
 			_, top5_idx = torch.topk(eval_prob[i], 5)
 			if gt in top5_idx:

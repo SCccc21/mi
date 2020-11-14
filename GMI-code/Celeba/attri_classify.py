@@ -2,14 +2,15 @@ from classify import MobileNet
 import torch
 from torch import nn
 from matplotlib import pyplot as plt
+from dataloader import load_attri, attriloader
+import os
 
-def train(model, epochs, train_all_losses, train_all_acc, trainloader):
+def train(model, optimizer, criterion, epochs, train_all_losses, train_all_acc, trainloader):
     model.train()
     # initial the running loss
     running_loss = 0.0
     # pick each data from trainloader i: batch index/ data: inputs and labels
     correct = 0
-    optimizer = torch.optim.Adam(mobilenet.parameters(), lr=learning_rate, betas=(0.9, 0.999))
     for i, data in enumerate(trainloader):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
@@ -30,20 +31,21 @@ def train(model, epochs, train_all_losses, train_all_acc, trainloader):
         optimizer.step()
         
         result = outputs > 0.5
-        correct += (result == labels).sum().item() 
+        correct += (result == labels).sum().item() #NOTE: for all the 40 attributes
+        # import pdb; pdb.set_trace()
 
         if i % 64 == 0: 
             print('Training set: [Epoch: %d, Data: %6d] Loss: %.3f' %
                   (epochs + 1, i * 64, loss.item()))
  
-    acc = correct / (split_train * 40)
+    acc = correct / (141819 * 40)
     running_loss /= len(trainloader)
     train_all_losses.append(running_loss)
     train_all_acc.append(acc)
     print('\nTraining set: Epoch: %d, Accuracy: %.2f %%' % (epochs + 1, 100. * acc))
 
 
-def validation(model, val_all_losses, val_all_acc, best_acc, validloader):
+def validation(model, criterion, val_all_losses, val_all_acc, best_acc, validloader):
     model.eval()
     validation_loss = 0.0
     correct = 0
@@ -70,7 +72,7 @@ def validation(model, val_all_losses, val_all_acc, best_acc, validloader):
     
     return acc
 
-def test(model, attr_acc, attr_name=attributes, testloader):
+def test(model, criterion, attr_acc, attr_name, testloader):
     test_loss = 0
     correct = 0
     pred = []
@@ -103,78 +105,85 @@ def test(model, attr_acc, attr_name=attributes, testloader):
         print('Attribute: %s, Accuracy: %.3f' % (attr_name[i], attr_acc[i]))
 
 def main():
-    trainloader, validloader, testloader = load_attri()
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0,1,2,3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '4,5,6,7'
+    attributes, trainloader, validloader, testloader = load_attri()
+    print("==========================")
 
-	# define empty list to store the losses and accuracy for ploting
-	train_all_losses2 = []
-	train_all_acc2 = []
-	val_all_losses2 = []
-	val_all_acc2 = []
-	test_all_losses2 = 0.0
-	# define the training epoches
-	epochs = 100
+    # define empty list to store the losses and accuracy for ploting
+    train_all_losses2 = []
+    train_all_acc2 = []
+    val_all_losses2 = []
+    val_all_acc2 = []
+    test_all_losses2 = 0.0
+    # define the training epoches
+    epochs = 100
 
-	# instantiate Net class
-	mobilenet = MobileNet()
-	# use cuda to train the network
-	mobilenet.to('cuda')
-	#loss function and optimizer
-	criterion = nn.BCELoss()
-	learning_rate = 1e-3
-	optimizer = torch.optim.Adam(mobilenet.parameters(), lr=learning_rate, betas=(0.9, 0.999))
+    # instantiate Net class
+    mobilenet = MobileNet()
+    # use cuda to train the network
+    mobilenet = torch.nn.DataParallel(mobilenet).to('cuda')
+    #loss function and optimizer
+    criterion = nn.BCELoss()
+    learning_rate = 1e-3
+    optimizer = torch.optim.Adam(mobilenet.parameters(), lr=learning_rate, betas=(0.9, 0.999))
 
-	%load_ext memory_profiler
+    # %load_ext memory_profiler
 
-	best_acc = 0.0
+    best_acc = 0.0
 
-	for epoch in range(epochs):
-	    train(mobilenet, epoch, train_all_losses2, train_all_acc2, trainloader)
-	    acc = validation(mobilenet, val_all_losses2, val_all_acc2, best_acc, validloader)
-	    # record the best model
-	    if acc > best_acc:
-	      checkpoint_path = './attribute/model_checkpoint.pth'
-	      best_acc = acc
-	      # save the model and optimizer
-	      torch.save({'model_state_dict': mobilenet.state_dict(),
-	              'optimizer_state_dict': optimizer.state_dict()}, checkpoint_path)
-	      print('new best model saved')
-	    print("========================================================================")
+    for epoch in range(epochs):
+        train(mobilenet, optimizer, criterion, epoch, train_all_losses2, train_all_acc2, trainloader)
+        acc = validation(mobilenet, criterion, val_all_losses2, val_all_acc2, best_acc, validloader)
+        # record the best model
+        if acc > best_acc:
+          checkpoint_path = './attribute/model_checkpoint_nopretrain.pth'
+          best_acc = acc
+          # save the model and optimizer
+          torch.save({'model_state_dict': mobilenet.state_dict(),
+                  'optimizer_state_dict': optimizer.state_dict()}, checkpoint_path)
+          print('new best model saved')
+        print("========================================================================")
 
-	checkpoint_path = './model_checkpoint.pth'
-	model = MobileNet().to('cuda')
-	checkpoint = torch.load(checkpoint_path)
-	print("model load successfully.")
+    
+    # Test
+    checkpoint_path = './model_checkpoint.pth'
+    model = MobileNet()
+    model = torch.nn.DataParallel(model).cuda()
+    
+    checkpoint = torch.load(checkpoint_path)
+    print("model load successfully.")
 
-	model.load_state_dict(checkpoint['model_state_dict'])
-	optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-	model.eval()
-	attr_acc = []
-	test(model, attr_acc=attr_acc)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    model.eval()
+    attr_acc = []
+    test(model, criterion, attr_acc, attributes, testloader)
 
-	# plot results
-	plt.figure(figsize=(8, 10))
-	plt.barh(range(40), [100 * acc for acc in attr_acc], tick_label = attributes, fc = 'brown')
-	plt.show()
+    # plot results
+    plt.figure(figsize=(8, 10))
+    plt.barh(range(40), [100 * acc for acc in attr_acc], tick_label = attributes, fc = 'brown')
+    plt.show()
 
-	plt.figure(figsize=(8, 6))
-	plt.xlabel('Epochs')
-	plt.ylabel('Loss')
-	plt.title('Loss')
-	plt.grid(True, linestyle='-.')
-	plt.plot(train_all_losses2, c='salmon', label = 'Training Loss')
-	plt.plot(val_all_losses2, c='brown', label = 'Validation Loss')
-	plt.legend(fontsize='12', loc='upper right')
-	plt.show()
+    plt.figure(figsize=(8, 6))
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss')
+    plt.grid(True, linestyle='-.')
+    plt.plot(train_all_losses2, c='salmon', label = 'Training Loss')
+    plt.plot(val_all_losses2, c='brown', label = 'Validation Loss')
+    plt.legend(fontsize='12', loc='upper right')
+    plt.show()
 
-	plt.figure(figsize=(8, 6))
-	plt.xlabel('Epochs')
-	plt.ylabel('Accuracy')
-	plt.title('Accuracy')
-	plt.grid(True, linestyle='-.')
-	plt.plot(train_all_acc2, c='salmon', label = 'Training Accuracy')
-	plt.plot(val_all_acc2, c='brown', label = 'Validation Accuracy')
-	plt.legend(fontsize='12', loc='lower right')
-	plt.show()
+    plt.figure(figsize=(8, 6))
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy')
+    plt.grid(True, linestyle='-.')
+    plt.plot(train_all_acc2, c='salmon', label = 'Training Accuracy')
+    plt.plot(val_all_acc2, c='brown', label = 'Validation Accuracy')
+    plt.legend(fontsize='12', loc='lower right')
+    plt.show()
 
 if __name__ == "__main__":
     main()

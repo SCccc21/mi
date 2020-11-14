@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
 	aver_acc, aver_acc5, aver_var, aver_var5 = 0, 0, 0, 0
 	# no auxilary
-	for i in range(3):
+	for i in range(1):
 		iden = torch.from_numpy(np.arange(60))
 
 		for idx in range(5):
@@ -134,10 +134,10 @@ if __name__ == "__main__":
 			# acc, acc5, var, var5 = inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag)
 			acc, acc5, var, var5 = dist_inversion(G, D, T, E, iden, itr=i, lr=2e-2, momentum=0.9, lamda=100, iter_times=1500, clip_range=1, improved=improved_flag, num_seeds=5)
 			iden = iden + 60
-			aver_acc += acc / 15
-			aver_acc5 += acc5 / 15
-			aver_var += var / 15
-			aver_var5 += var5 / 15
+			aver_acc += acc / 5
+			aver_acc5 += acc5 / 5
+			aver_var += var / 5
+			aver_var5 += var5 / 5
 
 	print("Average Acc:{:.2f}\tAverage Acc5:{:.2f}\tAverage Acc_var:{:.4f}\tAverage Acc_var5:{:.4f}".format(aver_acc, aver_acc5, aver_var, aver_var5))
 
